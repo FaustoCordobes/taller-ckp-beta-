@@ -1,0 +1,1272 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Taller CKP — Órdenes de trabajo</title>
+<meta name="description" content="Sistema interno de órdenes de trabajo, historial de vehículos y avisos por WhatsApp del Taller CKP, Junín de los Andes.">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#1d4f91">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ===== Paleta y tipografías del taller (clásico azul) ===== */
+:root{
+  --azul:#1d4f91; --azul-2:#163d70; --azul-claro:#e8f0fb; --azul-borde:#b9cdea;
+  --fondo:#f2f5f9; --card:#ffffff; --texto:#17212e; --muted:#566275; --borde:#d9e1eb;
+  --ok:#1b7041; --ok-bg:#e3f5ea; --warn:#8a5300; --warn-bg:#fff2d6; --danger:#b42318; --danger-bg:#fdecea;
+  --wa:#1a9e50; --wa-2:#14813f;
+  --f-texto:'Barlow', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --f-titulo:'Barlow Condensed', 'Barlow', system-ui, sans-serif;
+  --radio:10px; --nav-h:64px;
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{font-family:var(--f-texto);font-size:16px;line-height:1.5;color:var(--texto);background:var(--fondo);-webkit-font-smoothing:antialiased}
+a{color:var(--azul)}
+button,input,select,textarea{font:inherit;color:inherit}
+h1,h2,h3{font-family:var(--f-titulo);font-weight:600;margin:0;line-height:1.15;letter-spacing:.2px}
+h1{font-size:28px} h2{font-size:22px} h3{font-size:18px}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.skip{position:absolute;left:-999px;top:8px;background:#fff;padding:8px 12px;z-index:100}
+.skip:focus{left:8px}
+:focus-visible{outline:3px solid #f0a020;outline-offset:2px}
+svg.i{width:20px;height:20px;flex:none;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+
+/* ===== Estructura ===== */
+.app{min-height:100vh;display:flex;flex-direction:column}
+.topbar{background:var(--azul);color:#fff;position:sticky;top:0;z-index:20}
+.topbar-in{display:flex;align-items:center;gap:12px;padding:10px 16px;max-width:1180px;margin:0 auto}
+.logo{width:40px;height:40px;border-radius:8px;background:#fff;color:var(--azul);display:grid;place-items:center;font-family:var(--f-titulo);font-weight:700;font-size:17px;letter-spacing:.5px;flex:none}
+.marca b{display:block;font-family:var(--f-titulo);font-size:20px;font-weight:600;line-height:1.1}
+.marca span{font-size:13px;opacity:.85}
+.topbar .spacer{flex:1}
+.demo-tag{font-size:12px;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.3);padding:3px 8px;border-radius:999px;white-space:nowrap}
+.layout{flex:1;display:flex;max-width:1180px;width:100%;margin:0 auto}
+.side{display:none}
+main{flex:1;min-width:0;padding:16px 16px calc(var(--nav-h) + 24px)}
+.bottomnav{position:fixed;left:0;right:0;bottom:0;height:var(--nav-h);background:#fff;border-top:1px solid var(--borde);display:flex;z-index:30;padding-bottom:env(safe-area-inset-bottom)}
+.bottomnav a{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;text-decoration:none;color:var(--muted);font-size:12px;font-weight:500;min-height:44px}
+.bottomnav a.on{color:var(--azul)}
+.bottomnav a.on svg{stroke-width:2.4}
+@media (min-width:900px){
+  .bottomnav{display:none}
+  .side{display:block;width:220px;flex:none;padding:20px 0 20px 16px}
+  .side nav{position:sticky;top:80px;display:flex;flex-direction:column;gap:4px}
+  .side a{display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:8px;text-decoration:none;color:var(--texto);font-weight:500}
+  .side a:hover{background:#e6ecf4}
+  .side a.on{background:var(--azul);color:#fff}
+  main{padding:20px 24px 32px}
+}
+.foot{max-width:1180px;width:100%;margin:0 auto;padding:4px 16px calc(var(--nav-h) + 16px);display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:center;font-size:12.5px;color:var(--muted)}
+@media (min-width:900px){.foot{padding-bottom:20px}}
+.foot a{display:inline-flex;align-items:center;gap:6px;color:var(--wa-2);text-decoration:none;font-weight:600;border:1px solid #bfe3cc;border-radius:999px;padding:4px 10px;background:#fff}
+
+/* ===== Componentes ===== */
+.vhead{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+.vhead h1{flex:1;min-width:0}
+.vhead .sub{width:100%;color:var(--muted);font-size:14px;margin-top:-6px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:0 16px;border-radius:var(--radio);border:1px solid var(--borde);background:#fff;font-weight:600;cursor:pointer;text-decoration:none;color:var(--texto);white-space:nowrap}
+.btn:hover{border-color:#b8c4d3;background:#f8fafc}
+.btn.pri{background:var(--azul);border-color:var(--azul);color:#fff}
+.btn.pri:hover{background:var(--azul-2)}
+.btn.wa{background:var(--wa);border-color:var(--wa);color:#fff}
+.btn.wa:hover{background:var(--wa-2)}
+.btn.peligro{color:var(--danger);border-color:#f0c4bf}
+.btn.peligro.lleno{background:var(--danger);color:#fff;border-color:var(--danger)}
+.btn.chico{min-height:36px;padding:0 12px;font-size:14px}
+.btn.icono{width:44px;padding:0}
+.btn.bloque{width:100%}
+.btn[disabled]{opacity:.5;cursor:not-allowed}
+.card{background:var(--card);border:1px solid var(--borde);border-radius:12px;padding:16px}
+.card + .card{margin-top:12px}
+.card h3{margin-bottom:10px}
+.grid2{display:grid;gap:12px}
+@media (min-width:700px){.grid2{grid-template-columns:1fr 1fr}}
+.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:16px}
+@media (min-width:700px){.stats{grid-template-columns:repeat(4,1fr)}}
+.stat{background:#fff;border:1px solid var(--borde);border-radius:12px;padding:12px 14px;text-align:left;cursor:pointer;font:inherit;color:inherit}
+.stat:hover{border-color:var(--azul-borde)}
+.stat b{display:block;font-family:var(--f-titulo);font-size:30px;font-weight:600;line-height:1.1;color:var(--azul)}
+.stat span{font-size:13.5px;color:var(--muted)}
+.stat.alerta b{color:var(--danger)}
+.buscar{position:relative;margin-bottom:12px}
+.buscar svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--muted)}
+.buscar input{width:100%;min-height:46px;border:1px solid var(--borde);border-radius:var(--radio);padding:0 12px 0 40px;background:#fff}
+.chips{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px;margin-bottom:12px;scrollbar-width:thin}
+.chip{flex:none;min-height:38px;padding:0 14px;border-radius:999px;border:1px solid var(--borde);background:#fff;font-weight:500;font-size:14px;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.chip.on{background:var(--azul);border-color:var(--azul);color:#fff}
+.chip .n{font-size:12px;background:rgba(0,0,0,.08);border-radius:999px;padding:0 7px}
+.chip.on .n{background:rgba(255,255,255,.25)}
+.lista{display:grid;gap:10px}
+@media (min-width:700px){.lista.cols{grid-template-columns:1fr 1fr}}
+.ot{display:block;background:#fff;border:1px solid var(--borde);border-radius:12px;padding:14px;text-decoration:none;color:inherit}
+.ot:hover{border-color:var(--azul-borde);background:#fbfdff}
+.ot-top{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px}
+.ot-veh{font-weight:600}
+.ot-cli{color:var(--muted);font-size:14px}
+.ot-tareas{font-size:14px;margin-top:6px;color:#2c3747}
+.ot-bottom{display:flex;justify-content:space-between;align-items:baseline;margin-top:10px;font-size:13px;color:var(--muted);gap:8px}
+.ot-bottom strong{font-family:var(--f-titulo);font-size:20px;color:var(--texto);font-weight:600}
+.patente{display:inline-block;font-family:var(--f-titulo);font-weight:700;font-size:16px;letter-spacing:1.5px;background:#fff;color:#111;border:2px solid #222;border-top:6px solid var(--azul);border-radius:5px;padding:0 8px;line-height:1.35}
+.patente.grande{font-size:24px;padding:2px 12px}
+.badge{display:inline-flex;align-items:center;font-size:12.5px;font-weight:600;padding:3px 10px;border-radius:999px;white-space:nowrap}
+.e-ingresado{background:#eceff4;color:#3d4757}
+.e-presupuestado{background:var(--warn-bg);color:var(--warn)}
+.e-aprobado{background:var(--azul-claro);color:var(--azul-2)}
+.e-reparacion{background:#ffe9d6;color:#94400f}
+.e-listo{background:var(--ok-bg);color:var(--ok)}
+.e-entregado{background:#e6e9ee;color:#4a5566}
+.vacio{text-align:center;padding:36px 16px;color:var(--muted);background:#fff;border:1px dashed var(--borde);border-radius:12px}
+.vacio p{margin:0 0 12px}
+.muted{color:var(--muted)}
+.chico-txt{font-size:13.5px}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:15px}
+.kv dt{color:var(--muted)}
+.kv dd{margin:0;font-weight:500;overflow-wrap:anywhere}
+
+/* Stepper de estados */
+.pasos{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px}
+.paso{flex:1 0 auto;min-height:44px;padding:6px 12px;border-radius:8px;border:1px solid var(--borde);background:#fff;font-size:13.5px;font-weight:600;cursor:pointer;color:var(--muted);display:flex;align-items:center;gap:6px}
+.paso.hecho{color:var(--azul);border-color:var(--azul-borde);background:#f5f9ff}
+.paso.actual{background:var(--azul);color:#fff;border-color:var(--azul)}
+.paso.actual.listo{background:var(--ok);border-color:var(--ok)}
+
+.aviso-listo{background:var(--ok-bg);border:1px solid #b7e0c6;border-radius:12px;padding:16px;margin-bottom:12px}
+.aviso-listo h3{color:var(--ok);margin-bottom:4px}
+.aviso-listo .acc{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+
+.tareas{list-style:none;margin:0;padding:0}
+.tareas li{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #edf1f6}
+.tareas li:last-child{border-bottom:0}
+.tareas label{display:flex;align-items:center;gap:10px;flex:1;cursor:pointer;min-height:36px}
+.tareas input[type=checkbox]{width:22px;height:22px;accent-color:var(--azul);flex:none}
+.tareas .hecha span{text-decoration:line-through;color:var(--muted)}
+.total-box{display:flex;justify-content:space-between;align-items:baseline;border-top:2px solid var(--texto);margin-top:10px;padding-top:10px}
+.total-box b{font-family:var(--f-titulo);font-size:28px;font-weight:700}
+
+.fotos{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:8px}
+.foto{position:relative;aspect-ratio:1;border-radius:8px;overflow:hidden;border:1px solid var(--borde);background:#eef2f7}
+.foto img{width:100%;height:100%;object-fit:cover;display:block;cursor:zoom-in}
+.foto button{position:absolute;top:4px;right:4px;width:30px;height:30px;border-radius:50%;border:0;background:rgba(0,0,0,.6);color:#fff;display:grid;place-items:center;cursor:pointer}
+.foto button svg{width:16px;height:16px}
+.add-foto{aspect-ratio:1;border:2px dashed var(--azul-borde);border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:var(--azul);font-size:13px;font-weight:600;cursor:pointer;background:#f7faff}
+.add-foto input{display:none}
+
+.timeline{list-style:none;margin:0;padding:0}
+.timeline li{position:relative;padding:0 0 12px 22px;font-size:14px}
+.timeline li::before{content:"";position:absolute;left:5px;top:6px;width:9px;height:9px;border-radius:50%;background:var(--azul)}
+.timeline li::after{content:"";position:absolute;left:9px;top:16px;bottom:0;width:1px;background:var(--borde)}
+.timeline li:last-child::after{display:none}
+
+.hist{display:grid;gap:8px}
+.hist a{display:block;text-decoration:none;color:inherit;border:1px solid var(--borde);border-radius:10px;padding:12px;background:#fff}
+.hist a:hover{border-color:var(--azul-borde)}
+.hist .h-top{display:flex;justify-content:space-between;gap:8px;font-size:14px;color:var(--muted)}
+.hist .h-t{margin-top:4px}
+.hist .h-tot{font-family:var(--f-titulo);font-weight:600;font-size:18px;color:var(--texto)}
+
+.svc{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.svc .badge{margin-left:auto}
+
+/* ===== Formularios ===== */
+.campo{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+.campo label{font-weight:600;font-size:14.5px}
+.campo .ayuda{font-size:13px;color:var(--muted)}
+.campo input,.campo select,.campo textarea{min-height:46px;border:1px solid #c9d3df;border-radius:var(--radio);padding:10px 12px;background:#fff;width:100%}
+.campo textarea{min-height:96px;resize:vertical}
+.campo input.patente-in{font-family:var(--f-titulo);font-size:22px;letter-spacing:2px;text-transform:uppercase;font-weight:700}
+.campo .err-msg{color:var(--danger);font-size:13px;display:none}
+.campo.err input,.campo.err select,.campo.err textarea{border-color:var(--danger);background:#fffafa}
+.campo.err .err-msg{display:block}
+.fila{display:grid;gap:0 12px}
+@media (min-width:560px){.fila{grid-template-columns:1fr 1fr}.fila.tres{grid-template-columns:1fr 1fr 1fr}}
+.add-tarea{display:flex;gap:8px}
+.add-tarea input{flex:1;min-width:0}
+.tarea-ed{display:flex;align-items:center;gap:8px;background:#f6f8fb;border:1px solid var(--borde);border-radius:8px;padding:6px 6px 6px 12px;margin-top:8px}
+.tarea-ed span{flex:1;min-width:0;overflow-wrap:anywhere}
+.encontrado{background:var(--azul-claro);border:1px solid var(--azul-borde);border-radius:10px;padding:12px;margin-bottom:14px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.form-acc{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;margin-top:8px}
+.errores{background:var(--danger-bg);border:1px solid #f3c1bb;color:var(--danger);border-radius:10px;padding:12px 14px;margin-bottom:12px;font-size:14.5px}
+.errores ul{margin:4px 0 0;padding-left:18px}
+.wa-num{font-size:13.5px;margin-top:2px}
+.wa-num.ok{color:var(--ok)} .wa-num.mal{color:var(--danger)}
+fieldset{border:0;padding:0;margin:0}
+legend{font-family:var(--f-titulo);font-size:18px;font-weight:600;margin-bottom:10px;padding:0}
+
+/* ===== Modal y toast ===== */
+.modal-fondo{position:fixed;inset:0;background:rgba(10,20,35,.5);z-index:60;display:flex;align-items:flex-end;justify-content:center;padding:0}
+@media (min-width:600px){.modal-fondo{align-items:center;padding:20px}}
+.modal{background:#fff;width:100%;max-width:560px;max-height:92vh;overflow:auto;border-radius:16px 16px 0 0;padding:18px 18px calc(18px + env(safe-area-inset-bottom))}
+@media (min-width:600px){.modal{border-radius:16px}}
+.modal-h{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.modal-h h2{flex:1}
+.modal-img{max-width:100%;border-radius:10px;display:block;margin:0 auto}
+.toasts{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--nav-h) + 14px);z-index:80;display:flex;flex-direction:column;gap:8px;width:min(92vw,420px)}
+@media (min-width:900px){.toasts{bottom:24px}}
+.toast{background:#17212e;color:#fff;padding:12px 16px;border-radius:10px;font-size:14.5px;box-shadow:0 6px 20px rgba(0,0,0,.18)}
+.toast.error{background:var(--danger)}
+.toast.ok{background:var(--ok)}
+
+/* ===== Bloqueo con PIN ===== */
+.lock{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;background:var(--azul)}
+.lock-card{background:#fff;border-radius:16px;padding:28px 22px;width:100%;max-width:360px;text-align:center}
+.lock-card .logo{width:64px;height:64px;font-size:26px;margin:0 auto 12px;background:var(--azul);color:#fff}
+.lock-card input{width:100%;min-height:54px;font-size:28px;letter-spacing:12px;text-align:center;border:1px solid #c9d3df;border-radius:10px;margin:16px 0 10px;font-family:var(--f-titulo)}
+.lock-card .err-txt{color:var(--danger);font-size:14px;min-height:20px}
+
+/* ===== Comprobante (impresión) ===== */
+#print-area{display:none}
+@media print{
+  body{background:#fff}
+  .app,.modal-fondo,.toasts,.lock{display:none!important}
+  #print-area{display:block;font-family:var(--f-texto);color:#000;padding:10mm}
+}
+.comp{border:1px solid var(--borde);border-radius:10px;padding:14px;font-size:14px;background:#fff;color:#000}
+.pr-h{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;border-bottom:2px solid #000;padding-bottom:8px;margin-bottom:12px}
+.pr-h h1{font-size:24px}
+.pr-t{width:100%;border-collapse:collapse;margin:10px 0}
+.pr-t td,.pr-t th{border-bottom:1px solid #999;padding:6px 4px;text-align:left;font-size:13px;vertical-align:top}
+.pr-tot{text-align:right;font-size:20px;font-weight:700;margin-top:8px}
+.pr-firma{margin-top:36px;display:flex;justify-content:space-between;gap:16px;font-size:12px}
+.pr-firma div{border-top:1px solid #000;flex:1;padding-top:4px;text-align:center}
+.pr-pie{margin-top:20px;font-size:10px;color:#555;text-align:center}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">Saltar al contenido</a>
+<div id="root"></div>
+<div id="modal-root"></div>
+<div class="toasts" id="toasts" role="status" aria-live="polite"></div>
+<div id="print-area" aria-hidden="true"></div>
+
+<script>
+/* =========================================================
+   TALLER CKP — Demo de órdenes de trabajo
+   Un solo archivo: HTML + CSS + JS, datos en localStorage.
+   ========================================================= */
+
+/* ---------- Configuración de la demo ---------- */
+const CONFIG = {
+  STORAGE_KEY: 'ckp_taller_demo_v1',
+  SESSION_KEY: 'ckp_taller_sesion',
+  DESARROLLADOR_WA: '5492944242906',
+  ESTADOS: ['Ingresado','Presupuestado','Aprobado','En reparación','Listo','Entregado'],
+  TIPOS: ['Auto','Camioneta','Moto','Utilitario / camión'],
+  DIAS_AVISO_SERVICE: 30
+};
+const CLASE_ESTADO = {
+  'Ingresado':'e-ingresado','Presupuestado':'e-presupuestado','Aprobado':'e-aprobado',
+  'En reparación':'e-reparacion','Listo':'e-listo','Entregado':'e-entregado'
+};
+const PLANTILLA_DEFECTO =
+`Hola {cliente}! Te escribimos de {taller}.
+Tu {vehiculo} (patente {patente}) ya está listo para retirar.
+
+Trabajos realizados:
+{trabajos}
+
+Total: {total}
+
+Te esperamos en {direccion}. ¡Gracias por confiar en nosotros!`;
+
+/* ---------- Utilidades ---------- */
+const $ = (s, el=document) => el.querySelector(s);
+const $$ = (s, el=document) => [...el.querySelectorAll(s)];
+const uid = () => Math.random().toString(36).slice(2,8) + Date.now().toString(36).slice(-5);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const pesos = new Intl.NumberFormat('es-AR', {style:'currency', currency:'ARS', maximumFractionDigits:0});
+const plata = (n) => pesos.format(Number(n)||0);
+const miles = (n) => new Intl.NumberFormat('es-AR').format(Number(n)||0);
+const TZ = 'America/Argentina/Buenos_Aires';
+const fecha = (iso) => iso ? new Date(iso).toLocaleDateString('es-AR',{timeZone:TZ,day:'2-digit',month:'2-digit',year:'numeric'}) : '—';
+const fechaHora = (iso) => iso ? new Date(iso).toLocaleString('es-AR',{timeZone:TZ,day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit',hour12:false}) : '—';
+const diasAtras = (n) => new Date(Date.now() - n*86400000).toISOString();
+const diasDesde = (iso) => Math.floor((Date.now() - new Date(iso).getTime())/86400000);
+const hace = (iso) => { const d = diasDesde(iso); return d<=0 ? 'hoy' : d===1 ? 'hace 1 día' : `hace ${d} días`; };
+const normPatente = (s) => String(s||'').toUpperCase().replace(/[^A-Z0-9]/g,'');
+const sinAcentos = (s) => String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();
+const isoDia = (iso) => iso ? new Date(iso).toISOString().slice(0,10) : '';
+
+/* Íconos (trazos simples, sin dependencias) */
+const IC = {
+  taller:'<path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18l3 3 6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.4-.6-.6-2.4z"/>',
+  auto:'<path d="M3 13l2-6h14l2 6v5H3z"/><path d="M3 13h18"/><circle cx="7.5" cy="15.5" r="1"/><circle cx="16.5" cy="15.5" r="1"/><path d="M5 18v2M19 18v2"/>',
+  clientes:'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/>',
+  service:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/>',
+  ajustes:'<circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
+  mas:'<path d="M12 5v14M5 12h14"/>',
+  buscar:'<circle cx="11" cy="11" r="7"/><path d="M21 21l-5-5"/>',
+  atras:'<path d="M15 18l-6-6 6-6"/>',
+  imprimir:'<path d="M6 9V3h12v6"/><path d="M6 18H4v-7h16v7h-2"/><path d="M6 14h12v7H6z"/>',
+  borrar:'<path d="M3 6h18M8 6V4h8v2M6 6l1 15h10l1-15"/>',
+  editar:'<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/>',
+  camara:'<path d="M3 8h4l2-3h6l2 3h4v12H3z"/><circle cx="12" cy="13" r="4"/>',
+  candado:'<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',
+  wa:'<path d="M3 21l1.7-4.8A8.5 8.5 0 1 1 8 19.6z"/><path d="M9 9.5c0 3 2.5 5.5 5.5 5.5l1-1.5-2-1-1 .8a4 4 0 0 1-2-2l.8-1-1-2z"/>',
+  web:'<rect x="2" y="4" width="20" height="14" rx="2"/><path d="M8 21h8M12 18v3"/>',
+  cerrar:'<path d="M18 6L6 18M6 6l12 12"/>',
+  descargar:'<path d="M12 3v12M7 10l5 5 5-5M4 21h16"/>',
+  reset:'<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/>',
+  check:'<path d="M5 12l5 5L20 7"/>'
+};
+const ico = (n, extra='') => `<svg class="i" viewBox="0 0 24 24" aria-hidden="true" ${extra}>${IC[n]||''}</svg>`;
+
+/* ---------- WhatsApp: normalizar número argentino ----------
+   Acepta "2972 412345", "02972 15412345", "+54 9 2972 412345", etc.
+   Devuelve "549XXXXXXXXXX" (13 dígitos) o null si no es válido. */
+function normalizarWA(tel){
+  let d = String(tel||'').replace(/\D/g,'');
+  if (!d) return null;
+  if (d.startsWith('549') && d.length === 13) return d;
+  if (d.startsWith('54')) { d = d.slice(2); if (d.startsWith('9')) d = d.slice(1); }
+  if (d.startsWith('0')) d = d.slice(1);
+  if (d.length === 12) {               // tiene el "15" después del código de área
+    for (const largo of [4,3,2]) {
+      if (d.substr(largo,2) === '15') { d = d.slice(0,largo) + d.slice(largo+2); break; }
+    }
+  }
+  return d.length === 10 ? '549' + d : null;
+}
+const mostrarWA = (n) => n ? `+54 9 ${n.slice(3,7)} ${n.slice(7)}` : '';
+const linkWA = (num, txt) => `https://wa.me/${num}?text=${encodeURIComponent(txt)}`;
+const linkWAWeb = (num, txt) => `https://web.whatsapp.com/send?phone=${num}&text=${encodeURIComponent(txt)}`;
+
+/* ---------- Datos de ejemplo (ficticios) ---------- */
+function datosEjemplo(){
+  const c = (id,nombre,telefono,notas='') => ({id,nombre,telefono,notas,creado:diasAtras(300)});
+  const clientes = [
+    c('c1','Marcelo Quintana','2972 500101'),
+    c('c2','Lorena Paillalef','2972 500102'),
+    c('c3','Diego Arrieta','2972 500103','Prefiere que lo llamen después de las 14 h'),
+    c('c4','Sofía Benítez','2972 500104'),
+    c('c5','Hostería Los Radales','2972 500105','Vehículo de la empresa. Factura a nombre de la hostería.'),
+    c('c6','Ramiro Ñancucheo','2972 500106')
+  ];
+  const v = (id,clienteId,patente,tipo,marca,modelo,anio,color,vin,motor) => ({id,clienteId,patente,tipo,marca,modelo,anio,color,vin,motor});
+  const vehiculos = [
+    v('v1','c1','AE123KD','Camioneta','Toyota','Hilux SRV','2021','Blanco','','Diésel 2.8'),
+    v('v2','c2','AC456PL','Auto','Volkswagen','Gol Trend','2018','Gris','','Nafta 1.6'),
+    v('v3','c3','OKL482','Camioneta','Ford','Ranger XLT','2014','Azul','','Diésel 3.2'),
+    v('v4','c4','AF789TR','Auto','Fiat','Cronos Drive','2023','Rojo','','Nafta 1.3'),
+    v('v5','c5','AD321MN','Utilitario / camión','Renault','Kangoo','2019','Blanco','','Nafta 1.6'),
+    v('v6','c6','A123BCD','Moto','Honda','XR 250 Tornado','2020','Rojo','','Nafta 250 cc'),
+    v('v7','c6','NJK905','Auto','Chevrolet','Corsa Classic','2012','Blanco','','Nafta 1.4 GNC'),
+    v('v8','c1','AE998QS','Auto','Toyota','Corolla XEI','2020','Gris plata','','Nafta 2.0')
+  ];
+  let num = 0;
+  const o = (vehiculoId, dias, estado, km, tareas, total, extra={}) => {
+    num++;
+    const idx = CONFIG.ESTADOS.indexOf(estado);
+    const hist = CONFIG.ESTADOS.slice(0, idx+1).map((e,i) => ({estado:e, fecha:diasAtras(Math.max(dias - i*(dias>5?Math.ceil(dias/8):0), 0) - (i*0.02))}));
+    return Object.assign({
+      id:'o'+num, numero:num, vehiculoId, fechaIngreso:diasAtras(dias), km,
+      tareas:tareas.map(t => ({id:uid(), texto:t, hecha: idx>=4})),
+      total, estado, fotos:[], notas:'', proxKm:'', proxFecha:'',
+      fechaEntrega: estado==='Entregado' ? hist[hist.length-1].fecha : '',
+      historial:hist, avisos: estado==='Entregado' ? [{fecha:hist[hist.length-1].fecha}] : []
+    }, extra);
+  };
+  const enDias = (n) => new Date(Date.now() + n*86400000).toISOString().slice(0,10);
+  const ordenes = [
+    o('v1',200,'Entregado',58000,['Service 10.000 km: aceite 5W30 sintético','Filtro de aceite, aire, combustible y habitáculo','Revisión general de fluidos'],210000,{proxKm:'68000',proxFecha:enDias(-15)}),
+    o('v5',160,'Entregado',87300,['Pastillas de freno delanteras','Rectificado de discos','Purga de líquido de frenos'],138000,{proxFecha:enDias(12),notas:'Pastillas traseras al 40 %. Avisar en el próximo service.'}),
+    o('v3',120,'Entregado',182400,['Cambio de aceite y filtros (aceite, aire, combustible)','Engrase de crucetas'],165000,{proxKm:'192400',proxFecha:enDias(60)}),
+    o('v2',45,'Entregado',96500,['Alineación y balanceo','Rotación de cubiertas'],52000,{proxFecha:enDias(140)}),
+    o('v3',30,'Entregado',189900,['Bujes de parrilla inferior (ambos lados)','Extremos de dirección','Alineación'],245000,{proxKm:'194900',proxFecha:enDias(-6)}),
+    o('v7',0,'Ingresado',212000,['Revisar ruido en tren delantero al doblar','Diagnóstico general'],0,{notas:'El cliente dice que el ruido aparece en frío.'}),
+    o('v4',1,'Presupuestado',41200,['Kit de distribución completo','Bomba de agua','Líquido refrigerante'],520000),
+    o('v1',2,'Aprobado',67100,['Escaneo de inyección','Limpieza de inyectores','Cambio de filtro de combustible'],185000),
+    o('v6',3,'En reparación',18400,['Kit de transmisión (cadena, corona y piñón)','Regulación de carburador'],98000),
+    o('v2',1,'En reparación',101300,['Embrague completo (disco, placa y crapodina)','Rectificado de volante'],640000),
+    o('v8',0,'Listo',54800,['Service: aceite y filtros','Alineación y balanceo','Revisión de frenos'],178000,{proxKm:'64800'}),
+    o('v5',0,'Listo',93100,['Cambio de batería 12 V 75 Ah','Revisión de alternador y carga'],165000)
+  ];
+  return {
+    version:1,
+    config:{ taller:'Taller CKP', direccion:'Av. San Martín 1234, Junín de los Andes', telefono:'2972 500000', pin:'1234', plantilla:PLANTILLA_DEFECTO },
+    clientes, vehiculos, ordenes, proximoNumero: num+1
+  };
+}
+
+/* ---------- Persistencia (localStorage con try/catch) ---------- */
+let db;
+function cargar(){
+  try { const raw = localStorage.getItem(CONFIG.STORAGE_KEY); if (raw) { db = JSON.parse(raw); return; } } catch(e){}
+  db = datosEjemplo(); guardar();
+}
+function guardar(){
+  try { localStorage.setItem(CONFIG.STORAGE_KEY, JSON.stringify(db)); return true; }
+  catch(e){ toast('No se pudo guardar en este equipo (memoria llena). Probá borrando algunas fotos.','error'); return false; }
+}
+function sesionAbierta(){ try { return sessionStorage.getItem(CONFIG.SESSION_KEY) === '1'; } catch(e){ return window.__sesion === true; } }
+function abrirSesion(v){ window.__sesion = v; try { v ? sessionStorage.setItem(CONFIG.SESSION_KEY,'1') : sessionStorage.removeItem(CONFIG.SESSION_KEY); } catch(e){} }
+
+/* ---------- Consultas ---------- */
+const cliente = (id) => db.clientes.find(x => x.id === id);
+const vehiculo = (id) => db.vehiculos.find(x => x.id === id);
+const orden = (id) => db.ordenes.find(x => x.id === id);
+const nombreVeh = (v) => v ? `${v.marca} ${v.modelo}${v.anio ? ' '+v.anio : ''}`.trim() : 'Vehículo';
+const ordenesDeVeh = (vid) => db.ordenes.filter(o => o.vehiculoId === vid).sort((a,b) => b.fechaIngreso.localeCompare(a.fechaIngreso));
+const vehiculosDeCli = (cid) => db.vehiculos.filter(v => v.clienteId === cid);
+const nroOrden = (n) => '#' + String(n).padStart(4,'0');
+const badge = (e) => `<span class="badge ${CLASE_ESTADO[e]||''}">${esc(e)}</span>`;
+const patenteHTML = (p, grande) => `<span class="patente${grande?' grande':''}">${esc(p)}</span>`;
+
+/* Próximo service por vehículo: el último dato cargado */
+function servicesPendientes(){
+  const res = [];
+  const hoy = new Date().toISOString().slice(0,10);
+  for (const v of db.vehiculos){
+    const ords = ordenesDeVeh(v.id);
+    const conProx = ords.find(o => o.proxKm || o.proxFecha);
+    if (!conProx) continue;
+    // si el auto volvió y se ENTREGÓ una orden posterior, ese service se considera hecho
+    const posterior = ords.find(o => o.fechaIngreso > conProx.fechaIngreso && o.estado === 'Entregado');
+    if (posterior) continue;
+    let nivel = 'ok', dias = null;
+    if (conProx.proxFecha){
+      dias = Math.round((new Date(conProx.proxFecha+'T12:00:00') - new Date(hoy+'T12:00:00'))/86400000);
+      nivel = dias < 0 ? 'vencido' : dias <= CONFIG.DIAS_AVISO_SERVICE ? 'proximo' : 'ok';
+    }
+    res.push({v, o:conProx, nivel, dias, ultimoKm: Math.max(...ords.map(x => Number(x.km)||0))});
+  }
+  const peso = {vencido:0, proximo:1, ok:2};
+  return res.sort((a,b) => peso[a.nivel]-peso[b.nivel] || (a.dias??9999)-(b.dias??9999));
+}
+
+/* ---------- Mensaje de WhatsApp ---------- */
+function mensajeListo(o){
+  const v = vehiculo(o.vehiculoId), c = cliente(v?.clienteId);
+  const trabajos = o.tareas.map(t => '- ' + t.texto).join('\n') || '- (sin detalle)';
+  const datos = {
+    cliente: (c?.nombre||'').split(' ')[0] || 'cliente',
+    vehiculo: nombreVeh(v), patente: v?.patente||'', trabajos, total: plata(o.total),
+    taller: db.config.taller, direccion: db.config.direccion, orden: nroOrden(o.numero),
+    km: miles(o.km)
+  };
+  return (db.config.plantilla || PLANTILLA_DEFECTO).replace(/\{(\w+)\}/g, (m,k) => k in datos ? datos[k] : m);
+}
+
+/* ---------- Toast y modales ---------- */
+function toast(msg, tipo=''){
+  $('#toasts').innerHTML = '';
+  const t = document.createElement('div'); t.className = 'toast ' + tipo; t.textContent = msg;
+  $('#toasts').appendChild(t); setTimeout(() => t.remove(), 3600);
+}
+let modalPrevFocus = null;
+function abrirModal(titulo, cuerpo){
+  modalPrevFocus = document.activeElement;
+  $('#modal-root').innerHTML = `
+    <div class="modal-fondo" data-act="cerrar-modal-fondo">
+      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-tit">
+        <div class="modal-h"><h2 id="modal-tit">${titulo}</h2>
+          <button class="btn icono" data-act="cerrar-modal" aria-label="Cerrar">${ico('cerrar')}</button></div>
+        ${cuerpo}
+      </div>
+    </div>`;
+  const f = $('#modal-root .modal input, #modal-root .modal textarea, #modal-root .modal select, #modal-root .modal .btn.pri, #modal-root .modal .btn.wa');
+  (f || $('#modal-root .modal button'))?.focus();
+}
+function cerrarModal(){ $('#modal-root').innerHTML = ''; modalPrevFocus?.focus?.(); }
+function confirmar(titulo, texto, textoOk, onOk, peligro=true){
+  abrirModal(esc(titulo), `<p>${texto}</p>
+    <div class="form-acc"><button class="btn" data-act="cerrar-modal">Cancelar</button>
+    <button class="btn ${peligro?'peligro lleno':'pri'}" id="conf-ok">${esc(textoOk)}</button></div>`);
+  $('#conf-ok').onclick = () => { cerrarModal(); onOk(); };
+  $('#conf-ok').focus();
+}
+
+/* ---------- Router por hash ---------- */
+const NAV = [
+  {id:'taller', txt:'Taller', ic:'taller'},
+  {id:'vehiculos', txt:'Vehículos', ic:'auto'},
+  {id:'clientes', txt:'Clientes', ic:'clientes'},
+  {id:'services', txt:'Services', ic:'service'},
+  {id:'ajustes', txt:'Ajustes', ic:'ajustes'}
+];
+const SECCION = {orden:'taller', nueva:'taller', editar:'taller', vehiculo:'vehiculos', cliente:'clientes'};
+function ruta(){ const h = location.hash.replace(/^#/,''); const i = h.indexOf('-'); return i < 0 ? {v:h||'taller', id:''} : {v:h.slice(0,i), id:h.slice(i+1)}; }
+const ir = (h) => { location.hash = h; };
+
+let ultimaRuta = '';
+function render(){
+  if (!sesionAbierta()) return renderLock();
+  if (!$('#main')) renderShell();
+  const r = ruta();
+  const sec = SECCION[r.v] || r.v;
+  $$('[data-nav]').forEach(a => { const on = a.dataset.nav === sec; a.classList.toggle('on', on); on ? a.setAttribute('aria-current','page') : a.removeAttribute('aria-current'); });
+  $('#marca-nombre').textContent = db.config.taller;
+  const vistas = {taller:vTaller, orden:vOrden, nueva:vForm, editar:vForm, vehiculos:vVehiculos, vehiculo:vVehiculo, clientes:vClientes, cliente:vCliente, services:vServices, ajustes:vAjustes};
+  const fn = vistas[r.v] || vTaller;
+  $('#main').innerHTML = fn(r);
+  if (fn.despues) fn.despues(r);
+  const clave = location.hash;
+  if (clave !== ultimaRuta){ window.scrollTo(0,0); ultimaRuta = clave; }
+}
+
+function renderShell(){
+  const navLinks = NAV.map(n => `<a href="#${n.id}" data-nav="${n.id}">${ico(n.ic)}<span>${n.txt}</span></a>`).join('');
+  $('#root').innerHTML = `
+  <div class="app">
+    <header class="topbar"><div class="topbar-in">
+      <div class="logo" aria-hidden="true">CKP</div>
+      <div class="marca"><b id="marca-nombre">Taller CKP</b><span>Órdenes de trabajo</span></div>
+      <div class="spacer"></div>
+      <span class="demo-tag" title="Los datos se guardan solo en este equipo">Demo</span>
+    </div></header>
+    <div class="layout">
+      <aside class="side"><nav aria-label="Secciones">${navLinks}</nav></aside>
+      <main id="main" tabindex="-1"></main>
+    </div>
+    <footer class="foot">
+      <span>Propiedad de Cordobes Fausto</span>
+      <a href="https://wa.me/${CONFIG.DESARROLLADOR_WA}?text=${encodeURIComponent('Hola Fausto, vi el sistema de Taller CKP y quiero consultar')}" target="_blank" rel="noopener">${ico('wa')}Contacto</a>
+    </footer>
+    <nav class="bottomnav" aria-label="Secciones">${navLinks}</nav>
+  </div>`;
+}
+
+function renderLock(){
+  $('#root').innerHTML = `
+  <div class="lock"><form class="lock-card" id="lock-form" autocomplete="off">
+    <div class="logo" aria-hidden="true">CKP</div>
+    <h1 style="font-size:26px">${esc(db.config.taller)}</h1>
+    <p class="muted" style="margin:4px 0 0">Ingresá el PIN del taller</p>
+    <label class="sr-only" for="pin">PIN</label>
+    <input id="pin" type="password" inputmode="numeric" maxlength="8" required autofocus>
+    <div class="err-txt" id="pin-err" role="alert"></div>
+    <button class="btn pri bloque" type="submit">${ico('candado')}Entrar</button>
+    <p class="muted chico-txt" style="margin:14px 0 0">PIN de la demo: <b>1234</b> · se cambia en Ajustes</p>
+  </form></div>`;
+  $('#lock-form').onsubmit = (e) => {
+    e.preventDefault();
+    if ($('#pin').value === String(db.config.pin)){ abrirSesion(true); $('#root').innerHTML=''; render(); }
+    else { $('#pin-err').textContent = 'PIN incorrecto. Probá de nuevo.'; $('#pin').value=''; $('#pin').focus(); }
+  };
+  setTimeout(() => $('#pin')?.focus(), 30);
+}
+
+/* =========================================================
+   VISTA: TALLER (inicio)
+   ========================================================= */
+let filtroEstado = 'activos', busqTaller = '';
+function filtrarOrdenes(){
+  const q = sinAcentos(busqTaller.trim()), qp = normPatente(busqTaller);
+  return db.ordenes.filter(o => {
+    if (filtroEstado === 'activos' && o.estado === 'Entregado') return false;
+    if (filtroEstado !== 'activos' && filtroEstado !== 'todos' && o.estado !== filtroEstado) return false;
+    if (!q) return true;
+    const v = vehiculo(o.vehiculoId), c = cliente(v?.clienteId);
+    const texto = sinAcentos([nombreVeh(v), c?.nombre, c?.telefono, o.tareas.map(t=>t.texto).join(' '), nroOrden(o.numero)].join(' '));
+    return texto.includes(q) || (qp && normPatente(v?.patente).includes(qp)) || (qp && String(c?.telefono||'').replace(/\D/g,'').includes(qp));
+  }).sort((a,b) => {
+    const pa = CONFIG.ESTADOS.indexOf(a.estado), pb = CONFIG.ESTADOS.indexOf(b.estado);
+    if (filtroEstado === 'activos' && pa !== pb) return pb - pa; // listos primero
+    return b.fechaIngreso.localeCompare(a.fechaIngreso);
+  });
+}
+function tarjetaOrden(o){
+  const v = vehiculo(o.vehiculoId), c = cliente(v?.clienteId);
+  const t = o.tareas.slice(0,2).map(x => esc(x.texto)).join(' · ');
+  const mas = o.tareas.length > 2 ? ` <span class="muted">+${o.tareas.length-2} más</span>` : '';
+  return `<a class="ot" href="#orden-${o.id}">
+    <div class="ot-top">${patenteHTML(v?.patente||'—')}${badge(o.estado)}</div>
+    <div class="ot-veh">${esc(nombreVeh(v))}</div>
+    <div class="ot-cli">${esc(c?.nombre||'Sin cliente')}</div>
+    <div class="ot-tareas">${t || '<span class="muted">Sin tareas cargadas</span>'}${mas}</div>
+    <div class="ot-bottom"><span>${nroOrden(o.numero)} · ${o.estado==='Entregado' ? 'entregado '+fecha(o.fechaEntrega) : 'ingresó '+hace(o.fechaIngreso)}</span><strong>${o.total ? plata(o.total) : '<span class="muted" style="font-size:14px">Sin monto</span>'}</strong></div>
+  </a>`;
+}
+function listaOrdenesHTML(){
+  const lista = filtrarOrdenes();
+  if (!lista.length){
+    return busqTaller
+      ? `<div class="vacio"><p>No encontramos órdenes para «${esc(busqTaller)}».</p><a class="btn pri" href="#nueva">${ico('mas')}Nueva orden</a></div>`
+      : `<div class="vacio"><p>No hay autos en este estado.</p><a class="btn pri" href="#nueva">${ico('mas')}Cargar un auto</a></div>`;
+  }
+  return `<div class="lista cols">${lista.map(tarjetaOrden).join('')}</div>`;
+}
+function vTaller(){
+  const activos = db.ordenes.filter(o => o.estado !== 'Entregado');
+  const cuenta = (e) => db.ordenes.filter(o => o.estado === e).length;
+  const vencidos = servicesPendientes().filter(s => s.nivel === 'vencido').length;
+  const chips = [['activos','En el taller',activos.length], ...CONFIG.ESTADOS.map(e => [e,e,cuenta(e)]), ['todos','Todas',db.ordenes.length]];
+  return `
+  <div class="vhead"><h1>Autos en el taller</h1><a class="btn pri" href="#nueva">${ico('mas')}Nueva orden</a></div>
+  <div class="stats">
+    <button class="stat" data-act="filtro" data-f="activos"><b>${activos.length}</b><span>En el taller</span></button>
+    <button class="stat" data-act="filtro" data-f="Listo"><b>${cuenta('Listo')}</b><span>Listos para retirar</span></button>
+    <button class="stat" data-act="filtro" data-f="Ingresado"><b>${cuenta('Ingresado')}</b><span>Para presupuestar</span></button>
+    <a class="stat ${vencidos?'alerta':''}" href="#services" style="text-decoration:none"><b>${vencidos}</b><span>Services vencidos</span></a>
+  </div>
+  <div class="buscar">${ico('buscar')}<label class="sr-only" for="q-taller">Buscar</label>
+    <input id="q-taller" type="search" placeholder="Buscar por patente, cliente, teléfono o trabajo" value="${esc(busqTaller)}"></div>
+  <div class="chips" role="group" aria-label="Filtrar por estado">${chips.map(([id,txt,n]) => `<button class="chip ${filtroEstado===id?'on':''}" data-act="filtro" data-f="${esc(id)}" aria-pressed="${filtroEstado===id}">${esc(txt)} <span class="n">${n}</span></button>`).join('')}</div>
+  <div id="lista-ordenes">${listaOrdenesHTML()}</div>`;
+}
+vTaller.despues = () => {
+  $('#q-taller').addEventListener('input', (e) => { busqTaller = e.target.value; if (busqTaller && filtroEstado==='activos') {} $('#lista-ordenes').innerHTML = listaOrdenesHTML(); });
+};
+
+/* =========================================================
+   VISTA: DETALLE DE ORDEN
+   ========================================================= */
+function vOrden(r){
+  const o = orden(r.id);
+  if (!o) return `<div class="vacio"><p>La orden no existe o fue borrada.</p><a class="btn pri" href="#taller">Volver al taller</a></div>`;
+  const v = vehiculo(o.vehiculoId), c = cliente(v?.clienteId);
+  const idx = CONFIG.ESTADOS.indexOf(o.estado);
+  const pasos = CONFIG.ESTADOS.map((e,i) => `<button class="paso ${i<idx?'hecho':''} ${i===idx?'actual':''} ${i===idx&&e==='Listo'?'listo':''}" data-act="estado" data-e="${esc(e)}" aria-pressed="${i===idx}">${i<idx?ico('check'):''}${esc(e)}</button>`).join('');
+  const sig = CONFIG.ESTADOS[idx+1];
+  const ultimoAviso = o.avisos?.length ? o.avisos[o.avisos.length-1].fecha : null;
+  const bloqueListo = (o.estado === 'Listo' || o.estado === 'Entregado') ? `
+    <div class="aviso-listo">
+      <h3>${o.estado==='Listo' ? 'Listo para retirar' : 'Entregado el ' + fecha(o.fechaEntrega)}</h3>
+      <div class="chico-txt">${ultimoAviso ? 'Último aviso por WhatsApp: ' + fechaHora(ultimoAviso) : 'Todavía no se le avisó al cliente.'}</div>
+      <div class="acc">
+        <button class="btn wa" data-act="wa">${ico('wa')}${ultimoAviso ? 'Volver a avisar' : 'Avisar por WhatsApp'}</button>
+        ${o.estado==='Listo' ? `<button class="btn" data-act="estado" data-e="Entregado">${ico('check')}Marcar entregado</button>` : ''}
+      </div>
+    </div>` : '';
+  const fotos = o.fotos.map((f,i) => `<div class="foto"><img src="${f}" alt="Foto ${i+1} de la orden" data-act="ver-foto" data-i="${i}" loading="lazy"><button data-act="borrar-foto" data-i="${i}" aria-label="Borrar foto ${i+1}">${ico('cerrar')}</button></div>`).join('');
+  return `
+  <div class="vhead">
+    <a class="btn icono" href="#taller" aria-label="Volver">${ico('atras')}</a>
+    <h1>Orden ${nroOrden(o.numero)}</h1>
+    <a class="btn icono" href="#editar-${o.id}" aria-label="Editar orden">${ico('editar')}</a>
+    <button class="btn icono peligro" data-act="borrar-orden" aria-label="Borrar orden">${ico('borrar')}</button>
+  </div>
+  ${bloqueListo}
+  <div class="card">
+    <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:10px">${patenteHTML(v?.patente||'—', true)}${badge(o.estado)}</div>
+    <dl class="kv">
+      <dt>Vehículo</dt><dd><a href="#vehiculo-${v?.id}">${esc(nombreVeh(v))}</a>${v?.color?' · '+esc(v.color):''}</dd>
+      <dt>Cliente</dt><dd>${c ? `<a href="#cliente-${c.id}">${esc(c.nombre)}</a>` : '—'}</dd>
+      <dt>WhatsApp</dt><dd>${esc(c?.telefono||'—')}</dd>
+      <dt>Ingresó</dt><dd>${fecha(o.fechaIngreso)} (${hace(o.fechaIngreso)})</dd>
+      <dt>Km</dt><dd>${o.km ? miles(o.km)+' km' : '—'}</dd>
+    </dl>
+  </div>
+  <div class="card">
+    <h3>Estado</h3>
+    <div class="pasos" role="group" aria-label="Cambiar estado">${pasos}</div>
+    ${sig ? `<button class="btn pri bloque" style="margin-top:12px" data-act="estado" data-e="${esc(sig)}">Pasar a «${esc(sig)}»</button>` : ''}
+  </div>
+  <div class="card">
+    <h3>Trabajos</h3>
+    ${o.tareas.length ? `<ul class="tareas">${o.tareas.map(t => `<li class="${t.hecha?'hecha':''}"><label><input type="checkbox" data-act="tarea" data-t="${t.id}" ${t.hecha?'checked':''}><span>${esc(t.texto)}</span></label></li>`).join('')}</ul>`
+      : `<p class="muted">Todavía no hay trabajos cargados. <a href="#editar-${o.id}">Agregar</a></p>`}
+    <div class="total-box"><span>Total</span><b>${o.total ? plata(o.total) : '<span class="muted" style="font-size:18px">Sin monto</span>'}</b></div>
+  </div>
+  <div class="card">
+    <h3>Fotos</h3>
+    <div class="fotos">${fotos}
+      <label class="add-foto">${ico('camara')}<span>Agregar</span><input type="file" accept="image/*" capture="environment" multiple data-act="subir-foto"></label>
+    </div>
+  </div>
+  <div class="grid2" style="margin-top:12px">
+    <div class="card" style="margin:0"><h3>Notas internas</h3>
+      <p class="chico-txt" style="margin:0;white-space:pre-wrap">${o.notas ? esc(o.notas) : '<span class="muted">Sin notas. No se envían al cliente.</span>'}</p></div>
+    <div class="card" style="margin:0"><h3>Próximo service</h3>
+      <p class="chico-txt" style="margin:0">${o.proxKm || o.proxFecha ? [o.proxKm ? 'A los '+miles(o.proxKm)+' km' : '', o.proxFecha ? 'El '+fecha(o.proxFecha+'T12:00:00') : ''].filter(Boolean).join(' o ') : '<span class="muted">Sin definir</span>'}</p></div>
+  </div>
+  <div class="card">
+    <h3>Historial de la orden</h3>
+    <ul class="timeline">${(o.historial||[]).slice().reverse().map(h => `<li><b>${esc(h.estado)}</b> · <span class="muted">${fechaHora(h.fecha)}</span></li>`).join('')}
+    ${(o.avisos||[]).slice().reverse().map(a => `<li>Aviso por WhatsApp · <span class="muted">${fechaHora(a.fecha)}</span></li>`).join('')}</ul>
+  </div>
+  <div class="form-acc" style="margin-top:12px">
+    <button class="btn" data-act="imprimir">${ico('imprimir')}Comprobante / PDF</button>
+    <a class="btn" href="#vehiculo-${v?.id}">${ico('auto')}Historial del vehículo</a>
+  </div>`;
+}
+vOrden.despues = (r) => { window.__ordenActual = r.id; };
+
+function cambiarEstado(o, nuevo){
+  if (o.estado === nuevo) return;
+  o.estado = nuevo;
+  o.historial = o.historial || [];
+  o.historial.push({estado:nuevo, fecha:new Date().toISOString()});
+  if (nuevo === 'Listo') o.tareas.forEach(t => t.hecha = true);
+  if (nuevo === 'Entregado') o.fechaEntrega = new Date().toISOString(); else o.fechaEntrega = '';
+  guardar(); render();
+  if (nuevo === 'Listo') abrirWA(o, true);
+  else toast('Estado: ' + nuevo, 'ok');
+}
+
+/* Modal de WhatsApp: mensaje editable + abrir app o WhatsApp Web */
+function abrirWA(o, recienListo=false){
+  const v = vehiculo(o.vehiculoId), c = cliente(v?.clienteId);
+  const num = normalizarWA(c?.telefono);
+  if (!num){
+    abrirModal('Falta el WhatsApp', `<p>El número de ${esc(c?.nombre||'este cliente')} no es válido${c?.telefono ? ` («${esc(c.telefono)}»)` : ''}. Cargalo con código de área, por ejemplo <b>2972 412345</b>.</p>
+      <div class="form-acc"><button class="btn" data-act="cerrar-modal">Cerrar</button>${c ? `<button class="btn pri" data-act="editar-cliente" data-id="${c.id}">Corregir número</button>` : ''}</div>`);
+    return;
+  }
+  const txt = mensajeListo(o);
+  abrirModal(recienListo ? '¡Auto listo! Avisale al cliente' : 'Avisar por WhatsApp', `
+    <p class="chico-txt" style="margin-top:0">Se abre WhatsApp con este mensaje ya escrito para <b>${esc(c.nombre)}</b> (${mostrarWA(num)}). Solo tenés que tocar <b>Enviar</b>.</p>
+    <div class="campo"><label for="wa-txt">Mensaje (lo podés retocar)</label>
+      <textarea id="wa-txt" rows="10" style="min-height:220px">${esc(txt)}</textarea></div>
+    <div class="form-acc" style="justify-content:stretch">
+      <a class="btn wa" style="flex:1" id="wa-app" href="${linkWA(num, txt)}" target="_blank" rel="noopener">${ico('wa')}Abrir WhatsApp</a>
+      <a class="btn" style="flex:1" id="wa-web" href="${linkWAWeb(num, txt)}" target="_blank" rel="noopener">${ico('web')}WhatsApp Web</a>
+    </div>
+    <p class="muted chico-txt" style="margin-bottom:0">En la compu, «WhatsApp Web» abre directo el chat en el navegador.</p>`);
+  const ta = $('#wa-txt');
+  ta.addEventListener('input', () => { $('#wa-app').href = linkWA(num, ta.value); $('#wa-web').href = linkWAWeb(num, ta.value); });
+  const registrar = () => { o.avisos = o.avisos || []; o.avisos.push({fecha:new Date().toISOString()}); guardar(); setTimeout(() => { cerrarModal(); render(); toast('Aviso registrado en la orden','ok'); }, 300); };
+  $('#wa-app').addEventListener('click', registrar);
+  $('#wa-web').addEventListener('click', registrar);
+}
+
+/* Comprobante imprimible / PDF */
+function comprobanteHTML(o){
+  const v = vehiculo(o.vehiculoId), c = cliente(v?.clienteId);
+  return `
+    <div class="pr-h"><div><h1>${esc(db.config.taller)}</h1><div>${esc(db.config.direccion)}</div><div>Tel.: ${esc(db.config.telefono)}</div></div>
+      <div style="text-align:right"><b>Orden ${nroOrden(o.numero)}</b><div>Ingreso: ${fecha(o.fechaIngreso)}</div>${o.fechaEntrega?`<div>Entrega: ${fecha(o.fechaEntrega)}</div>`:''}<div>Estado: ${esc(o.estado)}</div></div></div>
+    <table class="pr-t"><tr><th>Cliente</th><td>${esc(c?.nombre||'')}</td><th>Teléfono</th><td>${esc(c?.telefono||'')}</td></tr>
+      <tr><th>Vehículo</th><td>${esc(nombreVeh(v))}</td><th>Patente</th><td>${esc(v?.patente||'')}</td></tr>
+      <tr><th>Km</th><td>${o.km?miles(o.km):'—'}</td><th>Motor</th><td>${esc(v?.motor||'—')}</td></tr></table>
+    <h3>Trabajos realizados</h3>
+    <table class="pr-t">${o.tareas.map((t,i) => `<tr><td style="width:30px">${i+1}</td><td>${esc(t.texto)}</td></tr>`).join('')}</table>
+    <div class="pr-tot">Total: ${plata(o.total)}</div>
+    ${o.proxKm||o.proxFecha ? `<p><b>Próximo service:</b> ${[o.proxKm?'a los '+miles(o.proxKm)+' km':'', o.proxFecha?'el '+fecha(o.proxFecha+'T12:00:00'):''].filter(Boolean).join(' o ')}</p>` : ''}
+    <div class="pr-firma"><div>Firma del taller</div><div>Conformidad del cliente</div></div>
+    <div class="pr-pie">Documento no válido como factura · Sistema: Propiedad de Cordobes Fausto</div>`;
+}
+function imprimir(o){
+  const html = comprobanteHTML(o);
+  $('#print-area').innerHTML = html;
+  abrirModal('Comprobante ' + nroOrden(o.numero), `<div class="comp">${html}</div>
+    <p class="muted chico-txt">En la ventana de impresión elegí «Guardar como PDF» para mandarlo o archivarlo.</p>
+    <div class="form-acc"><button class="btn" data-act="cerrar-modal">Cerrar</button>
+    <button class="btn pri" id="btn-print">${ico('imprimir')}Imprimir / guardar PDF</button></div>`);
+  $('#btn-print').onclick = () => { try { window.print(); } catch(e){ toast('Este navegador no permite imprimir desde acá','error'); } };
+}
+
+/* Fotos: se comprimen antes de guardar */
+function comprimir(file){
+  return new Promise((ok, mal) => {
+    const fr = new FileReader();
+    fr.onload = () => { const img = new Image();
+      img.onload = () => { const max = 900; let w = img.width, h = img.height;
+        if (w > h && w > max){ h = h*max/w; w = max; } else if (h > max){ w = w*max/h; h = max; }
+        const cv = document.createElement('canvas'); cv.width = Math.round(w); cv.height = Math.round(h);
+        cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height); ok(cv.toDataURL('image/jpeg', 0.6)); };
+      img.onerror = mal; img.src = fr.result; };
+    fr.onerror = mal; fr.readAsDataURL(file);
+  });
+}
+async function leerFotos(files){
+  const res = [];
+  for (const f of files){ if (!f.type.startsWith('image/')) continue; try { res.push(await comprimir(f)); } catch(e){ toast('No se pudo leer una de las fotos','error'); } }
+  return res;
+}
+
+/* =========================================================
+   VISTA: FORMULARIO NUEVA / EDITAR ORDEN
+   ========================================================= */
+let F = null; // estado del formulario
+function vForm(r){
+  const editando = r.v === 'editar';
+  const o = editando ? orden(r.id) : null;
+  if (editando && !o) return `<div class="vacio"><p>La orden no existe.</p><a class="btn pri" href="#taller">Volver</a></div>`;
+  const vPre = !editando && r.id ? vehiculo(r.id) : (o ? vehiculo(o.vehiculoId) : null);
+  F = { editando, ordenId:o?.id||null, vehiculoId:vPre?.id||null, tareas:o ? o.tareas.map(t => ({...t})) : [], fotos:o ? [...o.fotos] : [] };
+  const sugerencias = [...new Set(db.ordenes.flatMap(x => x.tareas.map(t => t.texto)))].slice(0,80);
+  const opcCli = db.clientes.slice().sort((a,b) => a.nombre.localeCompare(b.nombre)).map(c => `<option value="${c.id}">${esc(c.nombre)} — ${esc(c.telefono)}</option>`).join('');
+  return `
+  <div class="vhead">
+    <a class="btn icono" href="${editando ? '#orden-'+o.id : '#taller'}" aria-label="Volver">${ico('atras')}</a>
+    <h1>${editando ? 'Editar orden ' + nroOrden(o.numero) : 'Nueva orden'}</h1>
+  </div>
+  <form id="form-orden" novalidate>
+    <div class="errores" id="f-errores" hidden tabindex="-1"></div>
+    <div class="card">
+      <fieldset><legend>Vehículo</legend>
+      ${editando ? '' : `
+      <div class="campo" id="c-patente"><label for="f-patente">Patente</label>
+        <input id="f-patente" class="patente-in" autocomplete="off" placeholder="AE123KD" value="${esc(vPre?.patente||'')}" maxlength="10" required>
+        <span class="ayuda">Si el auto ya vino antes, se completan solos los datos.</span>
+        <span class="err-msg">Ingresá la patente (6 o 7 caracteres).</span></div>`}
+      <div id="veh-encontrado"></div>
+      <div id="veh-nuevo" hidden>
+        <div class="fila">
+          <div class="campo"><label for="f-tipo">Tipo</label><select id="f-tipo">${CONFIG.TIPOS.map(t => `<option>${t}</option>`).join('')}</select></div>
+          <div class="campo"><label for="f-anio">Año</label><input id="f-anio" inputmode="numeric" maxlength="4" placeholder="2019"></div>
+        </div>
+        <div class="fila">
+          <div class="campo" id="c-marca"><label for="f-marca">Marca</label><input id="f-marca" placeholder="Toyota" list="dl-marcas"><span class="err-msg">Completá la marca.</span></div>
+          <div class="campo" id="c-modelo"><label for="f-modelo">Modelo</label><input id="f-modelo" placeholder="Hilux"><span class="err-msg">Completá el modelo.</span></div>
+        </div>
+        <div class="fila tres">
+          <div class="campo"><label for="f-color">Color</label><input id="f-color" placeholder="Blanco"></div>
+          <div class="campo"><label for="f-motor">Motor / combustible</label><input id="f-motor" placeholder="Nafta 1.6"></div>
+          <div class="campo"><label for="f-vin">VIN / chasis</label><input id="f-vin" placeholder="Opcional"></div>
+        </div>
+        <datalist id="dl-marcas">${['Chevrolet','Citroën','Fiat','Ford','Honda','Hyundai','Jeep','Nissan','Peugeot','Renault','Toyota','Volkswagen','Mercedes-Benz','Motomel','Yamaha','Zanella'].map(m=>`<option>${m}</option>`).join('')}</datalist>
+        <div class="campo" id="c-cliente" style="margin-top:6px"><label for="f-cliente">Dueño / cliente</label>
+          <select id="f-cliente"><option value="">+ Cliente nuevo</option>${opcCli}</select></div>
+        <div id="cli-nuevo">
+          <div class="fila">
+            <div class="campo" id="c-cnombre"><label for="f-cnombre">Nombre del cliente</label><input id="f-cnombre" autocomplete="off" placeholder="Nombre y apellido"><span class="err-msg">Completá el nombre.</span></div>
+            <div class="campo" id="c-ctel"><label for="f-ctel">WhatsApp del cliente</label><input id="f-ctel" type="tel" inputmode="tel" placeholder="2972 412345"><span class="wa-num" id="f-ctel-prev"></span><span class="err-msg">Número inválido: poné código de área + número.</span></div>
+          </div>
+        </div>
+      </div>
+      </fieldset>
+    </div>
+
+    <div class="card">
+      <fieldset><legend>Trabajos a realizar</legend>
+      <div class="campo" id="c-tareas" style="margin-bottom:6px"><label for="f-tarea">Agregá cada trabajo</label>
+        <div class="add-tarea"><input id="f-tarea" list="dl-tareas" autocomplete="off" placeholder="Ej.: cambio de filtro de aire">
+          <button type="button" class="btn pri" data-act="add-tarea">${ico('mas')}<span class="sr-only">Agregar trabajo</span></button></div>
+        <span class="ayuda">Escribí lo que quieras y tocá + (o Enter). Podés sumar todos los que necesites.</span>
+        <span class="err-msg">Agregá al menos un trabajo.</span>
+      </div>
+      <datalist id="dl-tareas">${sugerencias.map(s => `<option value="${esc(s)}">`).join('')}</datalist>
+      <div id="lista-tareas"></div>
+      </fieldset>
+      <div class="fila" style="margin-top:14px">
+        <div class="campo" id="c-total"><label for="f-total">Monto total ($)</label>
+          <input id="f-total" inputmode="numeric" placeholder="0" value="${o?.total ? o.total : ''}">
+          <span class="ayuda" id="f-total-prev">${o?.total ? plata(o.total) : 'Podés dejarlo vacío hasta presupuestar.'}</span>
+          <span class="err-msg">Ingresá un monto válido.</span></div>
+        <div class="campo"><label for="f-km">Km del vehículo</label><input id="f-km" inputmode="numeric" placeholder="Ej.: 85000" value="${o?.km||''}"></div>
+      </div>
+      ${editando ? '' : `<div class="campo"><label for="f-estado">Estado inicial</label><select id="f-estado">${CONFIG.ESTADOS.slice(0,4).map(e => `<option>${e}</option>`).join('')}</select></div>`}
+    </div>
+
+    <div class="card">
+      <h3>Fotos</h3>
+      <div class="fotos" id="f-fotos"></div>
+    </div>
+
+    <div class="card">
+      <div class="campo"><label for="f-notas">Notas internas</label><textarea id="f-notas" placeholder="Solo para ustedes. No se envían al cliente.">${esc(o?.notas||'')}</textarea></div>
+      <h3>Próximo service</h3>
+      <div class="fila">
+        <div class="campo"><label for="f-proxkm">A los km</label><input id="f-proxkm" inputmode="numeric" placeholder="Ej.: 95000" value="${esc(o?.proxKm||'')}"></div>
+        <div class="campo"><label for="f-proxfecha">O en la fecha</label><input id="f-proxfecha" type="date" value="${esc(o?.proxFecha||'')}"></div>
+      </div>
+      <div class="chips" style="margin:0"><button type="button" class="chip" data-act="prox" data-m="6">+6 meses</button><button type="button" class="chip" data-act="prox" data-m="12">+1 año</button><button type="button" class="chip" data-act="prox-km" data-k="10000">+10.000 km</button><button type="button" class="chip" data-act="prox-km" data-k="5000">+5.000 km</button></div>
+    </div>
+
+    <div class="form-acc" style="margin-top:16px">
+      <a class="btn" href="${editando ? '#orden-'+o.id : '#taller'}">Cancelar</a>
+      <button class="btn pri" type="submit">${ico('check')}${editando ? 'Guardar cambios' : 'Crear orden'}</button>
+    </div>
+  </form>`;
+}
+vForm.despues = (r) => {
+  pintarTareas(); pintarFotosForm();
+  const pat = $('#f-patente');
+  if (pat){ pat.addEventListener('input', () => { pat.value = pat.value.toUpperCase(); buscarPatente(); }); }
+  buscarPatente();
+  $('#f-tarea').addEventListener('keydown', (e) => { if (e.key === 'Enter'){ e.preventDefault(); agregarTarea(); } });
+  $('#f-cliente')?.addEventListener('change', () => { $('#cli-nuevo').hidden = !!$('#f-cliente').value; });
+  $('#f-ctel')?.addEventListener('input', previewTel);
+  $('#f-total').addEventListener('input', (e) => { const n = Number(String(e.target.value).replace(/\D/g,'')); $('#f-total-prev').textContent = n ? plata(n) : 'Podés dejarlo vacío hasta presupuestar.'; });
+  $('#form-orden').addEventListener('submit', guardarOrden);
+  if (!F.editando && !r.id) setTimeout(() => pat?.focus(), 50);
+};
+function previewTel(){
+  const n = normalizarWA($('#f-ctel').value), el = $('#f-ctel-prev');
+  if (!$('#f-ctel').value){ el.textContent = ''; el.className='wa-num'; return; }
+  el.textContent = n ? 'Se enviará a ' + mostrarWA(n) : 'Falta el código de área (ej.: 2972 412345)';
+  el.className = 'wa-num ' + (n ? 'ok' : 'mal');
+}
+function buscarPatente(){
+  const box = $('#veh-encontrado'), nuevo = $('#veh-nuevo');
+  let v = null;
+  if (F.editando) v = vehiculo(F.vehiculoId);
+  else {
+    const p = normPatente($('#f-patente')?.value);
+    v = p.length >= 6 ? db.vehiculos.find(x => normPatente(x.patente) === p) : null;
+  }
+  if (v){
+    const c = cliente(v.clienteId), n = ordenesDeVeh(v.id).length;
+    F.vehiculoId = v.id;
+    box.innerHTML = `<div class="encontrado">${patenteHTML(v.patente)}<div style="flex:1;min-width:180px"><b>${esc(nombreVeh(v))}</b><div class="chico-txt">${esc(c?.nombre||'Sin cliente')} · ${esc(c?.telefono||'')}${F.editando?'':` · ${n} ${n===1?'orden anterior':'órdenes anteriores'}`}</div></div>${F.editando?'':`<a class="btn chico" href="#vehiculo-${v.id}">Ver historial</a>`}</div>`;
+    nuevo.hidden = true;
+  } else {
+    F.vehiculoId = null; box.innerHTML = '';
+    const p = normPatente($('#f-patente')?.value);
+    nuevo.hidden = p.length < 6;
+    if (p.length >= 6 && !box.dataset.aviso){ }
+    $('#cli-nuevo').hidden = !!$('#f-cliente').value;
+  }
+}
+function agregarTarea(){
+  const inp = $('#f-tarea'), t = inp.value.trim();
+  if (!t){ inp.focus(); return; }
+  F.tareas.push({id:uid(), texto:t, hecha:false});
+  inp.value = ''; inp.focus(); pintarTareas();
+  $('#c-tareas').classList.remove('err');
+}
+function pintarTareas(){
+  $('#lista-tareas').innerHTML = F.tareas.length
+    ? F.tareas.map((t,i) => `<div class="tarea-ed"><span>${i+1}. ${esc(t.texto)}</span><button type="button" class="btn icono chico" style="width:36px" data-act="quitar-tarea" data-i="${i}" aria-label="Quitar ${esc(t.texto)}">${ico('cerrar')}</button></div>`).join('')
+    : `<p class="muted chico-txt" style="margin:8px 0 0">Todavía no agregaste trabajos.</p>`;
+}
+function pintarFotosForm(){
+  $('#f-fotos').innerHTML = F.fotos.map((f,i) => `<div class="foto"><img src="${f}" alt="Foto ${i+1}"><button type="button" data-act="quitar-foto-form" data-i="${i}" aria-label="Quitar foto ${i+1}">${ico('cerrar')}</button></div>`).join('')
+    + `<label class="add-foto">${ico('camara')}<span>Agregar</span><input type="file" accept="image/*" capture="environment" multiple data-act="foto-form"></label>`;
+}
+function marcarError(id, on){ const el = $('#'+id); if (el) el.classList.toggle('err', on); }
+function guardarOrden(e){
+  e.preventDefault();
+  const errores = [];
+  ['c-patente','c-marca','c-modelo','c-cnombre','c-ctel','c-tareas','c-total'].forEach(id => marcarError(id,false));
+  const pendiente = $('#f-tarea').value.trim();
+  if (pendiente){ F.tareas.push({id:uid(), texto:pendiente, hecha:false}); $('#f-tarea').value=''; pintarTareas(); }
+
+  let vehId = F.vehiculoId, nuevoVeh = null, nuevoCli = null;
+  if (!F.editando && !vehId){
+    const p = normPatente($('#f-patente').value);
+    if (p.length < 6 || p.length > 9){ errores.push('La patente no es válida.'); marcarError('c-patente',true); }
+    const marca = $('#f-marca').value.trim(), modelo = $('#f-modelo').value.trim();
+    if (!marca){ errores.push('Falta la marca.'); marcarError('c-marca',true); }
+    if (!modelo){ errores.push('Falta el modelo.'); marcarError('c-modelo',true); }
+    let cliId = $('#f-cliente').value;
+    if (!cliId){
+      const nom = $('#f-cnombre').value.trim(), tel = $('#f-ctel').value.trim();
+      if (!nom){ errores.push('Falta el nombre del cliente.'); marcarError('c-cnombre',true); }
+      if (!normalizarWA(tel)){ errores.push('El WhatsApp del cliente no es válido (poné código de área).'); marcarError('c-ctel',true); }
+      if (nom && normalizarWA(tel)){ nuevoCli = {id:uid(), nombre:nom, telefono:tel, notas:'', creado:new Date().toISOString()}; cliId = nuevoCli.id; }
+    }
+    if (!errores.length) nuevoVeh = {id:uid(), clienteId:cliId, patente:p, tipo:$('#f-tipo').value, marca, modelo, anio:$('#f-anio').value.trim(), color:$('#f-color').value.trim(), vin:$('#f-vin').value.trim(), motor:$('#f-motor').value.trim()};
+  }
+  if (!F.tareas.length){ errores.push('Agregá al menos un trabajo.'); marcarError('c-tareas',true); }
+  const totalTxt = $('#f-total').value.trim();
+  const total = Number(totalTxt.replace(/\./g,'').replace(',','.')) || 0;
+  if (totalTxt && (isNaN(Number(totalTxt.replace(/\./g,'').replace(',','.'))) || total < 0)){ errores.push('El monto no es válido.'); marcarError('c-total',true); }
+
+  const box = $('#f-errores');
+  if (errores.length){
+    box.hidden = false; box.innerHTML = `<b>Revisá estos datos:</b><ul>${errores.map(x => `<li>${esc(x)}</li>`).join('')}</ul>`;
+    box.focus(); box.scrollIntoView({behavior:'smooth', block:'center'}); return;
+  }
+  if (nuevoCli) db.clientes.push(nuevoCli);
+  if (nuevoVeh){ db.vehiculos.push(nuevoVeh); vehId = nuevoVeh.id; }
+  const datos = {
+    tareas:F.tareas, total:Math.round(total), km:$('#f-km').value.replace(/\D/g,''), fotos:F.fotos,
+    notas:$('#f-notas').value.trim(), proxKm:$('#f-proxkm').value.replace(/\D/g,''), proxFecha:$('#f-proxfecha').value
+  };
+  let id;
+  if (F.editando){ Object.assign(orden(F.ordenId), datos); id = F.ordenId; }
+  else {
+    const est = $('#f-estado').value, ahora = new Date().toISOString();
+    const hist = CONFIG.ESTADOS.slice(0, CONFIG.ESTADOS.indexOf(est)+1).map(e => ({estado:e, fecha:ahora}));
+    const nueva = Object.assign({id:uid(), numero:db.proximoNumero++, vehiculoId:vehId, fechaIngreso:ahora, estado:est, historial:hist, avisos:[], fechaEntrega:''}, datos);
+    db.ordenes.push(nueva); id = nueva.id;
+  }
+  if (!guardar()) return;
+  toast(F.editando ? 'Cambios guardados' : 'Orden creada', 'ok');
+  ir('#orden-' + id);
+}
+
+/* =========================================================
+   VISTAS: VEHÍCULOS
+   ========================================================= */
+let busqVeh = '';
+function listaVehHTML(){
+  const q = sinAcentos(busqVeh), qp = normPatente(busqVeh);
+  const lista = db.vehiculos.filter(v => {
+    if (!q) return true; const c = cliente(v.clienteId);
+    return sinAcentos([nombreVeh(v), c?.nombre, v.tipo, v.color].join(' ')).includes(q) || (qp && normPatente(v.patente).includes(qp));
+  }).sort((a,b) => (ordenesDeVeh(b.id)[0]?.fechaIngreso||'').localeCompare(ordenesDeVeh(a.id)[0]?.fechaIngreso||''));
+  if (!lista.length) return `<div class="vacio"><p>${busqVeh ? 'No hay vehículos que coincidan.' : 'Todavía no cargaste vehículos.'}</p><a class="btn pri" href="#nueva">${ico('mas')}Nueva orden</a></div>`;
+  return `<div class="lista cols">${lista.map(v => { const c = cliente(v.clienteId), ords = ordenesDeVeh(v.id), ult = ords[0];
+    return `<a class="ot" href="#vehiculo-${v.id}"><div class="ot-top">${patenteHTML(v.patente)}<span class="muted chico-txt">${esc(v.tipo)}</span></div>
+      <div class="ot-veh">${esc(nombreVeh(v))}</div><div class="ot-cli">${esc(c?.nombre||'Sin cliente')}</div>
+      <div class="ot-bottom"><span>${ords.length} ${ords.length===1?'orden':'órdenes'}</span><span>${ult ? 'Última: '+fecha(ult.fechaIngreso) : 'Sin órdenes'}</span></div></a>`; }).join('')}</div>`;
+}
+function vVehiculos(){
+  return `<div class="vhead"><h1>Vehículos</h1><a class="btn pri" href="#nueva">${ico('mas')}Nueva orden</a></div>
+  <div class="buscar">${ico('buscar')}<label class="sr-only" for="q-veh">Buscar vehículo</label><input id="q-veh" type="search" placeholder="Patente, marca, modelo o dueño" value="${esc(busqVeh)}"></div>
+  <div id="lista-veh">${listaVehHTML()}</div>`;
+}
+vVehiculos.despues = () => { $('#q-veh').addEventListener('input', e => { busqVeh = e.target.value; $('#lista-veh').innerHTML = listaVehHTML(); }); };
+
+function vVehiculo(r){
+  const v = vehiculo(r.id);
+  if (!v) return `<div class="vacio"><p>El vehículo no existe.</p><a class="btn pri" href="#vehiculos">Volver</a></div>`;
+  const c = cliente(v.clienteId), ords = ordenesDeVeh(v.id);
+  const gastado = ords.filter(o => o.estado==='Entregado').reduce((s,o) => s + (Number(o.total)||0), 0);
+  const svc = servicesPendientes().find(s => s.v.id === v.id);
+  return `
+  <div class="vhead">
+    <a class="btn icono" href="#vehiculos" aria-label="Volver">${ico('atras')}</a>
+    <h1>${esc(nombreVeh(v))}</h1>
+    <button class="btn icono" data-act="editar-vehiculo" data-id="${v.id}" aria-label="Editar vehículo">${ico('editar')}</button>
+    <button class="btn icono peligro" data-act="borrar-vehiculo" data-id="${v.id}" aria-label="Borrar vehículo">${ico('borrar')}</button>
+  </div>
+  <div class="grid2">
+    <div class="card" style="margin:0">
+      <div style="margin-bottom:12px">${patenteHTML(v.patente, true)}</div>
+      <dl class="kv">
+        <dt>Tipo</dt><dd>${esc(v.tipo)}</dd><dt>Año</dt><dd>${esc(v.anio||'—')}</dd><dt>Color</dt><dd>${esc(v.color||'—')}</dd>
+        <dt>Motor</dt><dd>${esc(v.motor||'—')}</dd><dt>VIN</dt><dd>${esc(v.vin||'—')}</dd>
+        <dt>Dueño</dt><dd>${c ? `<a href="#cliente-${c.id}">${esc(c.nombre)}</a> · ${esc(c.telefono)}` : '—'}</dd>
+      </dl>
+    </div>
+    <div class="card" style="margin:0">
+      <h3>Resumen</h3>
+      <dl class="kv"><dt>Visitas</dt><dd>${ords.length}</dd><dt>Último km</dt><dd>${ords.length ? miles(Math.max(...ords.map(o=>Number(o.km)||0)))+' km' : '—'}</dd>
+      <dt>Total histórico</dt><dd>${plata(gastado)}</dd>
+      <dt>Próximo service</dt><dd>${svc ? textoService(svc) : '—'}</dd></dl>
+      <a class="btn pri bloque" style="margin-top:14px" href="#nueva-${v.id}">${ico('mas')}Nueva orden para este vehículo</a>
+    </div>
+  </div>
+  <h2 style="margin:20px 0 10px">Historial de trabajos</h2>
+  ${ords.length ? `<div class="hist">${ords.map(o => `<a href="#orden-${o.id}"><div class="h-top"><span>${fecha(o.fechaIngreso)} · ${nroOrden(o.numero)}${o.km?' · '+miles(o.km)+' km':''}</span>${badge(o.estado)}</div>
+    <div class="h-t">${o.tareas.map(t => esc(t.texto)).join(' · ') || '<span class="muted">Sin detalle</span>'}</div>
+    <div class="h-tot">${o.total ? plata(o.total) : ''}</div></a>`).join('')}</div>`
+    : `<div class="vacio"><p>Este vehículo todavía no tiene trabajos.</p></div>`}`;
+}
+function textoService(s){
+  const partes = [];
+  if (s.o.proxKm) partes.push('a los ' + miles(s.o.proxKm) + ' km');
+  if (s.o.proxFecha) partes.push('el ' + fecha(s.o.proxFecha+'T12:00:00'));
+  return partes.join(' o ');
+}
+function modalVehiculo(id){
+  const v = vehiculo(id); if (!v) return;
+  const opc = db.clientes.slice().sort((a,b)=>a.nombre.localeCompare(b.nombre)).map(c => `<option value="${c.id}" ${c.id===v.clienteId?'selected':''}>${esc(c.nombre)}</option>`).join('');
+  abrirModal('Editar vehículo', `<form id="form-veh" novalidate>
+    <div class="campo" id="mv-c-pat"><label for="mv-pat">Patente</label><input id="mv-pat" class="patente-in" value="${esc(v.patente)}"><span class="err-msg">Patente inválida o repetida.</span></div>
+    <div class="fila"><div class="campo"><label for="mv-tipo">Tipo</label><select id="mv-tipo">${CONFIG.TIPOS.map(t=>`<option ${t===v.tipo?'selected':''}>${t}</option>`).join('')}</select></div>
+      <div class="campo"><label for="mv-anio">Año</label><input id="mv-anio" inputmode="numeric" value="${esc(v.anio)}"></div></div>
+    <div class="fila"><div class="campo" id="mv-c-marca"><label for="mv-marca">Marca</label><input id="mv-marca" value="${esc(v.marca)}"><span class="err-msg">Completá la marca.</span></div>
+      <div class="campo" id="mv-c-modelo"><label for="mv-modelo">Modelo</label><input id="mv-modelo" value="${esc(v.modelo)}"><span class="err-msg">Completá el modelo.</span></div></div>
+    <div class="fila"><div class="campo"><label for="mv-color">Color</label><input id="mv-color" value="${esc(v.color)}"></div>
+      <div class="campo"><label for="mv-motor">Motor / combustible</label><input id="mv-motor" value="${esc(v.motor)}"></div></div>
+    <div class="campo"><label for="mv-vin">VIN / chasis</label><input id="mv-vin" value="${esc(v.vin)}"></div>
+    <div class="campo"><label for="mv-cli">Dueño</label><select id="mv-cli">${opc}</select></div>
+    <div class="form-acc"><button type="button" class="btn" data-act="cerrar-modal">Cancelar</button><button class="btn pri" type="submit">Guardar</button></div></form>`);
+  $('#form-veh').onsubmit = (e) => {
+    e.preventDefault();
+    const p = normPatente($('#mv-pat').value), marca = $('#mv-marca').value.trim(), modelo = $('#mv-modelo').value.trim();
+    const repetida = db.vehiculos.some(x => x.id !== v.id && normPatente(x.patente) === p);
+    $('#mv-c-pat').classList.toggle('err', p.length<6 || repetida); $('#mv-c-marca').classList.toggle('err', !marca); $('#mv-c-modelo').classList.toggle('err', !modelo);
+    if (p.length<6 || repetida || !marca || !modelo) return;
+    Object.assign(v, {patente:p, tipo:$('#mv-tipo').value, anio:$('#mv-anio').value.trim(), marca, modelo, color:$('#mv-color').value.trim(), motor:$('#mv-motor').value.trim(), vin:$('#mv-vin').value.trim(), clienteId:$('#mv-cli').value});
+    guardar(); cerrarModal(); render(); toast('Vehículo actualizado','ok');
+  };
+}
+
+/* =========================================================
+   VISTAS: CLIENTES
+   ========================================================= */
+let busqCli = '';
+function listaCliHTML(){
+  const q = sinAcentos(busqCli), qd = busqCli.replace(/\D/g,'');
+  const lista = db.clientes.filter(c => !q || sinAcentos(c.nombre).includes(q) || (qd && c.telefono.replace(/\D/g,'').includes(qd)) || vehiculosDeCli(c.id).some(v => normPatente(v.patente).includes(normPatente(busqCli))))
+    .sort((a,b) => a.nombre.localeCompare(b.nombre));
+  if (!lista.length) return `<div class="vacio"><p>${busqCli ? 'No hay clientes que coincidan.' : 'Todavía no cargaste clientes.'}</p><button class="btn pri" data-act="nuevo-cliente">${ico('mas')}Agregar el primero</button></div>`;
+  return `<div class="lista cols">${lista.map(c => { const vs = vehiculosDeCli(c.id);
+    return `<a class="ot" href="#cliente-${c.id}"><div class="ot-veh">${esc(c.nombre)}</div><div class="ot-cli">${esc(c.telefono)}</div>
+      <div class="ot-tareas" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px">${vs.map(v => patenteHTML(v.patente)).join('') || '<span class="muted">Sin vehículos</span>'}</div></a>`; }).join('')}</div>`;
+}
+function vClientes(){
+  return `<div class="vhead"><h1>Clientes</h1><button class="btn pri" data-act="nuevo-cliente">${ico('mas')}Nuevo cliente</button></div>
+  <div class="buscar">${ico('buscar')}<label class="sr-only" for="q-cli">Buscar cliente</label><input id="q-cli" type="search" placeholder="Nombre, teléfono o patente" value="${esc(busqCli)}"></div>
+  <div id="lista-cli">${listaCliHTML()}</div>`;
+}
+vClientes.despues = () => { $('#q-cli').addEventListener('input', e => { busqCli = e.target.value; $('#lista-cli').innerHTML = listaCliHTML(); }); };
+
+function vCliente(r){
+  const c = cliente(r.id);
+  if (!c) return `<div class="vacio"><p>El cliente no existe.</p><a class="btn pri" href="#clientes">Volver</a></div>`;
+  const vs = vehiculosDeCli(c.id), num = normalizarWA(c.telefono);
+  const ords = db.ordenes.filter(o => vs.some(v => v.id === o.vehiculoId)).sort((a,b) => b.fechaIngreso.localeCompare(a.fechaIngreso));
+  return `
+  <div class="vhead">
+    <a class="btn icono" href="#clientes" aria-label="Volver">${ico('atras')}</a>
+    <h1>${esc(c.nombre)}</h1>
+    <button class="btn icono" data-act="editar-cliente" data-id="${c.id}" aria-label="Editar cliente">${ico('editar')}</button>
+    <button class="btn icono peligro" data-act="borrar-cliente" data-id="${c.id}" aria-label="Borrar cliente">${ico('borrar')}</button>
+  </div>
+  <div class="card">
+    <dl class="kv"><dt>WhatsApp</dt><dd>${esc(c.telefono)} ${num ? '' : '<span class="badge e-presupuestado">Revisar número</span>'}</dd>
+    <dt>Notas</dt><dd style="white-space:pre-wrap">${esc(c.notas||'—')}</dd></dl>
+    ${num ? `<a class="btn wa" style="margin-top:12px" href="https://wa.me/${num}" target="_blank" rel="noopener">${ico('wa')}Abrir chat</a>` : ''}
+  </div>
+  <h2 style="margin:20px 0 10px">Vehículos</h2>
+  ${vs.length ? `<div class="lista cols">${vs.map(v => `<a class="ot" href="#vehiculo-${v.id}"><div class="ot-top">${patenteHTML(v.patente)}<span class="muted chico-txt">${esc(v.tipo)}</span></div><div class="ot-veh">${esc(nombreVeh(v))}</div><div class="ot-cli">${ordenesDeVeh(v.id).length} órdenes</div></a>`).join('')}</div>`
+    : `<div class="vacio"><p>Sin vehículos. Se agregan al crear una orden.</p></div>`}
+  <h2 style="margin:20px 0 10px">Últimas órdenes</h2>
+  ${ords.length ? `<div class="lista">${ords.slice(0,6).map(tarjetaOrden).join('')}</div>` : `<div class="vacio"><p>Sin órdenes todavía.</p></div>`}`;
+}
+function modalCliente(id){
+  const c = id ? cliente(id) : {nombre:'', telefono:'', notas:''};
+  abrirModal(id ? 'Editar cliente' : 'Nuevo cliente', `<form id="form-cli" novalidate>
+    <div class="campo" id="mc-c-nom"><label for="mc-nom">Nombre</label><input id="mc-nom" value="${esc(c.nombre)}"><span class="err-msg">Completá el nombre.</span></div>
+    <div class="campo" id="mc-c-tel"><label for="mc-tel">WhatsApp</label><input id="mc-tel" type="tel" inputmode="tel" value="${esc(c.telefono)}" placeholder="2972 412345"><span class="wa-num" id="mc-prev"></span><span class="err-msg">Número inválido: poné código de área + número.</span></div>
+    <div class="campo"><label for="mc-notas">Notas</label><textarea id="mc-notas">${esc(c.notas)}</textarea></div>
+    <div class="form-acc"><button type="button" class="btn" data-act="cerrar-modal">Cancelar</button><button class="btn pri" type="submit">Guardar</button></div></form>`);
+  const prev = () => { const n = normalizarWA($('#mc-tel').value); $('#mc-prev').textContent = $('#mc-tel').value ? (n ? 'Se enviará a ' + mostrarWA(n) : 'Falta el código de área') : ''; $('#mc-prev').className = 'wa-num ' + (n?'ok':'mal'); };
+  $('#mc-tel').addEventListener('input', prev); prev();
+  $('#form-cli').onsubmit = (e) => {
+    e.preventDefault();
+    const nom = $('#mc-nom').value.trim(), tel = $('#mc-tel').value.trim();
+    $('#mc-c-nom').classList.toggle('err', !nom); $('#mc-c-tel').classList.toggle('err', !normalizarWA(tel));
+    if (!nom || !normalizarWA(tel)) return;
+    if (id) Object.assign(c, {nombre:nom, telefono:tel, notas:$('#mc-notas').value.trim()});
+    else db.clientes.push({id:uid(), nombre:nom, telefono:tel, notas:$('#mc-notas').value.trim(), creado:new Date().toISOString()});
+    guardar(); cerrarModal(); render(); toast(id ? 'Cliente actualizado' : 'Cliente agregado','ok');
+  };
+}
+
+/* =========================================================
+   VISTA: PRÓXIMOS SERVICES
+   ========================================================= */
+function vServices(){
+  const lista = servicesPendientes();
+  const grupo = (nivel, titulo, clase) => {
+    const items = lista.filter(s => s.nivel === nivel);
+    if (!items.length) return '';
+    return `<h2 style="margin:18px 0 10px">${titulo} <span class="muted" style="font-size:16px">(${items.length})</span></h2><div class="lista">${items.map(s => {
+      const c = cliente(s.v.clienteId);
+      const cuando = s.dias === null ? '' : s.dias < 0 ? `Venció hace ${-s.dias} días` : s.dias === 0 ? 'Vence hoy' : `Faltan ${s.dias} días`;
+      return `<a class="ot" href="#vehiculo-${s.v.id}"><div class="svc">${patenteHTML(s.v.patente)}<div><div class="ot-veh">${esc(nombreVeh(s.v))}</div><div class="ot-cli">${esc(c?.nombre||'')} · ${esc(c?.telefono||'')}</div></div>${cuando ? `<span class="badge ${clase}">${cuando}</span>` : ''}</div>
+        <div class="ot-tareas">Próximo service ${textoService(s)}${s.o.proxKm ? ` · último registro: ${miles(s.ultimoKm)} km` : ''}</div></a>`; }).join('')}</div>`;
+  };
+  return `<div class="vhead"><h1>Próximos services</h1><div class="sub">Se calcula con el «próximo service» que cargan en cada orden.</div></div>
+  ${lista.length ? grupo('vencido','Vencidos','e-reparacion') + grupo('proximo',`En los próximos ${CONFIG.DIAS_AVISO_SERVICE} días`,'e-presupuestado') + grupo('ok','Más adelante','e-aprobado')
+    : `<div class="vacio"><p>Todavía no hay services programados. Cargalos en el campo «Próximo service» de cada orden.</p></div>`}`;
+}
+
+/* =========================================================
+   VISTA: AJUSTES
+   ========================================================= */
+function vAjustes(){
+  const k = db.config;
+  const ej = db.ordenes.find(o => o.estado === 'Listo') || db.ordenes[0];
+  return `<div class="vhead"><h1>Ajustes</h1></div>
+  <form id="form-cfg" novalidate>
+  <div class="card"><h3>Datos del taller</h3>
+    <div class="campo" id="cfg-c-nom"><label for="cfg-nom">Nombre</label><input id="cfg-nom" value="${esc(k.taller)}"><span class="err-msg">Completá el nombre.</span></div>
+    <div class="campo"><label for="cfg-dir">Dirección</label><input id="cfg-dir" value="${esc(k.direccion)}"></div>
+    <div class="campo"><label for="cfg-tel">Teléfono</label><input id="cfg-tel" type="tel" value="${esc(k.telefono)}"></div>
+  </div>
+  <div class="card"><h3>Mensaje de «auto listo»</h3>
+    <div class="campo"><label for="cfg-pl">Plantilla</label><textarea id="cfg-pl" rows="9" style="min-height:200px">${esc(k.plantilla)}</textarea>
+      <span class="ayuda">Podés usar: {cliente} {vehiculo} {patente} {trabajos} {total} {taller} {direccion} {orden} {km}</span></div>
+    <div class="form-acc" style="justify-content:flex-start;margin-top:0"><button type="button" class="btn chico" data-act="plantilla-def">${ico('reset')}Volver al texto original</button></div>
+    ${ej ? `<details style="margin-top:12px"><summary style="cursor:pointer;font-weight:600">Ver cómo queda con la orden ${nroOrden(ej.numero)}</summary><pre id="cfg-prev" style="white-space:pre-wrap;font-family:inherit;background:#f6f8fb;border:1px solid var(--borde);border-radius:8px;padding:12px;font-size:14px">${esc(mensajeListo(ej))}</pre></details>` : ''}
+  </div>
+  <div class="card"><h3>Acceso</h3>
+    <div class="campo" id="cfg-c-pin"><label for="cfg-pin">PIN del taller</label><input id="cfg-pin" inputmode="numeric" maxlength="8" value="${esc(k.pin)}"><span class="ayuda">De 4 a 8 números. Es el mismo para los dos.</span><span class="err-msg">El PIN tiene que tener entre 4 y 8 números.</span></div>
+  </div>
+  <div class="form-acc"><button class="btn pri" type="submit">${ico('check')}Guardar ajustes</button></div>
+  </form>
+  <div class="card" style="margin-top:16px"><h3>Datos</h3>
+    <p class="chico-txt muted" style="margin-top:0">En esta demo los datos se guardan solo en este equipo. En la versión final se comparten entre los dos celulares.</p>
+    <div class="form-acc" style="justify-content:flex-start">
+      <button class="btn" data-act="exportar">${ico('descargar')}Exportar órdenes (Excel/CSV)</button>
+      <button class="btn" data-act="copiar-excel">${ico('check')}Copiar para pegar en Excel</button>
+      <button class="btn peligro" data-act="reset">${ico('reset')}Restablecer datos de ejemplo</button>
+      <button class="btn" data-act="salir">${ico('candado')}Bloquear</button>
+    </div>
+  </div>`;
+}
+vAjustes.despues = () => {
+  const ej = db.ordenes.find(o => o.estado === 'Listo') || db.ordenes[0];
+  $('#cfg-pl').addEventListener('input', () => { if (!$('#cfg-prev')) return; const prev = db.config.plantilla; db.config.plantilla = $('#cfg-pl').value; $('#cfg-prev').textContent = mensajeListo(ej); db.config.plantilla = prev; });
+  $('#form-cfg').onsubmit = (e) => {
+    e.preventDefault();
+    const nom = $('#cfg-nom').value.trim(), pin = $('#cfg-pin').value.trim();
+    $('#cfg-c-nom').classList.toggle('err', !nom); $('#cfg-c-pin').classList.toggle('err', !/^\d{4,8}$/.test(pin));
+    if (!nom || !/^\d{4,8}$/.test(pin)) return;
+    Object.assign(db.config, {taller:nom, direccion:$('#cfg-dir').value.trim(), telefono:$('#cfg-tel').value.trim(), pin, plantilla:$('#cfg-pl').value || PLANTILLA_DEFECTO});
+    guardar(); render(); toast('Ajustes guardados','ok');
+  };
+};
+
+function exportarCSV(){
+  const filas = [['Orden','Fecha ingreso','Estado','Patente','Vehículo','Cliente','WhatsApp','Km','Trabajos','Total','Fecha entrega']];
+  db.ordenes.slice().sort((a,b)=>a.numero-b.numero).forEach(o => { const v = vehiculo(o.vehiculoId), c = cliente(v?.clienteId);
+    filas.push([nroOrden(o.numero), fecha(o.fechaIngreso), o.estado, v?.patente||'', nombreVeh(v), c?.nombre||'', c?.telefono||'', o.km||'', o.tareas.map(t=>t.texto).join(' | '), o.total||0, o.fechaEntrega?fecha(o.fechaEntrega):'']); });
+  const csv = '﻿' + filas.map(f => f.map(x => `"${String(x).replace(/"/g,'""')}"`).join(';')).join('\r\n');
+  try {
+    const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv;charset=utf-8'}));
+    a.download = 'ordenes-taller-ckp.csv'; document.body.appendChild(a); a.click(); a.remove();
+    toast('Archivo descargado','ok');
+  } catch(e){ toast('No se pudo descargar el archivo en este navegador','error'); }
+}
+
+/* =========================================================
+   EVENTOS (delegación)
+   ========================================================= */
+document.addEventListener('click', (e) => {
+  const el = e.target.closest('[data-act]'); if (!el) return;
+  const act = el.dataset.act;
+  const o = window.__ordenActual ? orden(window.__ordenActual) : null;
+  switch(act){
+    case 'cerrar-modal': cerrarModal(); break;
+    case 'cerrar-modal-fondo': if (e.target === el) cerrarModal(); break;
+    case 'filtro': filtroEstado = el.dataset.f; render(); break;
+    case 'estado': if (o && ruta().v === 'orden'){ const n = el.dataset.e;
+        if (CONFIG.ESTADOS.indexOf(n) < CONFIG.ESTADOS.indexOf(o.estado)) confirmar('Volver a un estado anterior', `¿Pasar la orden de «${esc(o.estado)}» a «${esc(n)}»?`, 'Sí, cambiar', () => cambiarEstado(o,n), false);
+        else cambiarEstado(o, n); } break;
+    case 'wa': if (o) abrirWA(o); break;
+    case 'tarea': if (o){ const t = o.tareas.find(x => x.id === el.dataset.t); if (t){ t.hecha = el.checked; guardar(); el.closest('li').classList.toggle('hecha', t.hecha); } } break;
+    case 'imprimir': if (o) imprimir(o); break;
+    case 'borrar-orden': if (o) confirmar('Borrar orden', `Se va a borrar la orden ${nroOrden(o.numero)} con sus fotos. Esto no se puede deshacer.`, 'Borrar', () => { db.ordenes = db.ordenes.filter(x => x.id !== o.id); guardar(); toast('Orden borrada'); ir('#taller'); }); break;
+    case 'ver-foto': if (o) abrirModal('Foto', `<img class="modal-img" src="${o.fotos[+el.dataset.i]}" alt="Foto de la orden">`); break;
+    case 'borrar-foto': if (o) confirmar('Borrar foto', '¿Borrar esta foto de la orden?', 'Borrar', () => { o.fotos.splice(+el.dataset.i,1); guardar(); render(); }); break;
+    case 'add-tarea': agregarTarea(); break;
+    case 'quitar-tarea': F.tareas.splice(+el.dataset.i,1); pintarTareas(); break;
+    case 'quitar-foto-form': F.fotos.splice(+el.dataset.i,1); pintarFotosForm(); break;
+    case 'prox': { const m = +el.dataset.m, d = new Date(); d.setMonth(d.getMonth()+m); $('#f-proxfecha').value = d.toISOString().slice(0,10); } break;
+    case 'prox-km': { const km = Number($('#f-km').value.replace(/\D/g,'')); if (!km){ toast('Cargá primero los km del vehículo','error'); $('#f-km').focus(); } else $('#f-proxkm').value = km + Number(el.dataset.k); } break;
+    case 'editar-vehiculo': modalVehiculo(el.dataset.id); break;
+    case 'borrar-vehiculo': { const v = vehiculo(el.dataset.id), n = ordenesDeVeh(v.id).length;
+        if (n) abrirModal('No se puede borrar', `<p>Este vehículo tiene ${n} ${n===1?'orden':'órdenes'} en su historial. Borrá primero las órdenes si de verdad querés eliminarlo.</p><div class="form-acc"><button class="btn pri" data-act="cerrar-modal">Entendido</button></div>`);
+        else confirmar('Borrar vehículo', `¿Borrar ${esc(nombreVeh(v))} (${esc(v.patente)})?`, 'Borrar', () => { db.vehiculos = db.vehiculos.filter(x => x.id !== v.id); guardar(); ir('#vehiculos'); toast('Vehículo borrado'); }); } break;
+    case 'nuevo-cliente': modalCliente(null); break;
+    case 'editar-cliente': cerrarModal(); modalCliente(el.dataset.id); break;
+    case 'borrar-cliente': { const c = cliente(el.dataset.id), n = vehiculosDeCli(c.id).length;
+        if (n) abrirModal('No se puede borrar', `<p>${esc(c.nombre)} tiene ${n} ${n===1?'vehículo':'vehículos'} a su nombre. Pasalos a otro dueño o borralos primero.</p><div class="form-acc"><button class="btn pri" data-act="cerrar-modal">Entendido</button></div>`);
+        else confirmar('Borrar cliente', `¿Borrar a ${esc(c.nombre)}?`, 'Borrar', () => { db.clientes = db.clientes.filter(x => x.id !== c.id); guardar(); ir('#clientes'); toast('Cliente borrado'); }); } break;
+    case 'plantilla-def': $('#cfg-pl').value = PLANTILLA_DEFECTO; $('#cfg-pl').dispatchEvent(new Event('input')); break;
+    case 'exportar': exportarCSV(); break;
+    case 'copiar-excel': {
+      const filas = [['Orden','Fecha ingreso','Estado','Patente','Vehículo','Cliente','WhatsApp','Km','Trabajos','Total','Fecha entrega']];
+      db.ordenes.slice().sort((a,b)=>a.numero-b.numero).forEach(o => { const v = vehiculo(o.vehiculoId), c = cliente(v?.clienteId);
+        filas.push([nroOrden(o.numero), fecha(o.fechaIngreso), o.estado, v?.patente||'', nombreVeh(v), c?.nombre||'', c?.telefono||'', o.km||'', o.tareas.map(t=>t.texto).join(' | '), o.total||0, o.fechaEntrega?fecha(o.fechaEntrega):'']); });
+      const tsv = filas.map(f => f.map(x => String(x).replace(/[\t\n]/g,' ')).join('\t')).join('\n');
+      if (!navigator.clipboard) { toast('No se pudo copiar en este navegador','error'); break; }
+      navigator.clipboard.writeText(tsv).then(() => toast('Copiado: pegalo en una planilla de Excel','ok'), () => toast('No se pudo copiar en este navegador','error'));
+    } break;
+    case 'reset': confirmar('Restablecer datos de ejemplo', 'Se borra todo lo que cargaste y vuelven los datos de muestra. ¿Seguro?', 'Restablecer', () => { db = datosEjemplo(); guardar(); filtroEstado='activos'; busqTaller=busqVeh=busqCli=''; ir('#taller'); render(); toast('Datos de ejemplo restablecidos','ok'); }); break;
+    case 'salir': abrirSesion(false); $('#root').innerHTML=''; render(); break;
+  }
+});
+document.addEventListener('change', async (e) => {
+  const el = e.target;
+  if (el.dataset?.act === 'subir-foto' && el.files?.length){
+    const o = orden(window.__ordenActual); if (!o) return;
+    const nuevas = await leerFotos(el.files); o.fotos.push(...nuevas);
+    if (guardar()) { render(); toast(nuevas.length === 1 ? 'Foto agregada' : nuevas.length + ' fotos agregadas','ok'); } else { o.fotos.splice(-nuevas.length); }
+  }
+  if (el.dataset?.act === 'foto-form' && el.files?.length){
+    F.fotos.push(...await leerFotos(el.files)); pintarFotosForm();
+  }
+});
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && $('#modal-root').innerHTML) cerrarModal(); });
+window.addEventListener('hashchange', () => { cerrarModal(); render(); });
+
+/* ---------- Arranque ---------- */
+cargar();
+render();
+</script>
+</body>
+</html>
