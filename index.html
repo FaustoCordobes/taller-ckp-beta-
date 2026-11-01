@@ -133,6 +133,13 @@ main{flex:1;min-width:0;padding:16px 16px calc(var(--nav-h) + 24px)}
 .paso.actual{background:var(--azul);color:#fff;border-color:var(--azul)}
 .paso.actual.listo{background:var(--ok);border-color:var(--ok)}
 
+.msg-btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.btn.punteado{border-style:dashed;border-color:var(--azul-borde);color:var(--azul);background:#f7faff}
+.msg-guardado{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--borde);border-radius:10px;padding:10px 12px;margin-top:8px}
+.msg-guardado div{flex:1;min-width:0}
+.msg-guardado p{margin:2px 0 0;font-size:13px;color:var(--muted);white-space:pre-wrap;max-height:60px;overflow:hidden}
+.check-fila{display:flex;align-items:center;gap:10px;min-height:44px;font-weight:600;cursor:pointer}
+.check-fila input{width:22px;height:22px;accent-color:var(--azul)}
 .aviso-listo{background:var(--ok-bg);border:1px solid #b7e0c6;border-radius:12px;padding:16px;margin-bottom:12px}
 .aviso-listo h3{color:var(--ok);margin-bottom:4px}
 .aviso-listo .acc{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
@@ -271,6 +278,12 @@ Total: {total}
 
 Te esperamos en {direccion}. ¡Gracias por confiar en nosotros!`;
 
+const PLANTILLA_DEMORA =
+`Hola {cliente}! Te escribimos de {taller}.
+Queríamos avisarte que tu {vehiculo} (patente {patente}) va a tener que quedarse un poco más de tiempo en el taller.
+
+Apenas esté listo te avisamos por acá. ¡Gracias por la paciencia!`;
+
 /* ---------- Utilidades ---------- */
 const $ = (s, el=document) => el.querySelector(s);
 const $$ = (s, el=document) => [...el.querySelectorAll(s)];
@@ -309,7 +322,9 @@ const IC = {
   cerrar:'<path d="M18 6L6 18M6 6l12 12"/>',
   descargar:'<path d="M12 3v12M7 10l5 5 5-5M4 21h16"/>',
   reset:'<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/>',
-  check:'<path d="M5 12l5 5L20 7"/>'
+  check:'<path d="M5 12l5 5L20 7"/>',
+  reloj:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  mensaje:'<path d="M4 5h16v11H8l-4 4z"/><path d="M8 9h8M8 12h5"/>'
 };
 const ico = (n, extra='') => `<svg class="i" viewBox="0 0 24 24" aria-hidden="true" ${extra}>${IC[n]||''}</svg>`;
 
@@ -385,16 +400,22 @@ function datosEjemplo(){
   ];
   return {
     version:1,
-    config:{ taller:'Taller CKP', direccion:'Av. San Martín 1234, Junín de los Andes', telefono:'2972 500000', pin:'1234', plantilla:PLANTILLA_DEFECTO },
-    clientes, vehiculos, ordenes, proximoNumero: num+1
+    config:{ taller:'Taller CKP', direccion:'Av. San Martín 1234, Junín de los Andes', telefono:'2972 500000', pin:'1234', plantilla:PLANTILLA_DEFECTO, plantillaDemora:PLANTILLA_DEMORA },
+    clientes, vehiculos, ordenes, proximoNumero: num+1,
+    mensajes:[ {id:'m1', titulo:'Presupuesto listo', texto:'Hola {cliente}! Te escribimos de {taller}.\nYa tenemos el presupuesto de tu {vehiculo} (patente {patente}): {total}.\n¿Nos confirmás si avanzamos con el arreglo?'} ]
   };
 }
 
 /* ---------- Persistencia (localStorage con try/catch) ---------- */
 let db;
 function cargar(){
-  try { const raw = localStorage.getItem(CONFIG.STORAGE_KEY); if (raw) { db = JSON.parse(raw); return; } } catch(e){}
+  try { const raw = localStorage.getItem(CONFIG.STORAGE_KEY); if (raw) { db = JSON.parse(raw); migrar(); return; } } catch(e){}
   db = datosEjemplo(); guardar();
+}
+/* Completa campos nuevos en datos guardados con una versión anterior */
+function migrar(){
+  db.mensajes = db.mensajes || [];
+  db.config.plantillaDemora = db.config.plantillaDemora || PLANTILLA_DEMORA;
 }
 function guardar(){
   try { localStorage.setItem(CONFIG.STORAGE_KEY, JSON.stringify(db)); return true; }
@@ -437,16 +458,31 @@ function servicesPendientes(){
 }
 
 /* ---------- Mensaje de WhatsApp ---------- */
-function mensajeListo(o){
-  const v = vehiculo(o.vehiculoId), c = cliente(v?.clienteId);
-  const trabajos = o.tareas.map(t => '- ' + t.texto).join('\n') || '- (sin detalle)';
-  const datos = {
-    cliente: (c?.nombre||'').split(' ')[0] || 'cliente',
-    vehiculo: nombreVeh(v), patente: v?.patente||'', trabajos, total: plata(o.total),
-    taller: db.config.taller, direccion: db.config.direccion, orden: nroOrden(o.numero),
-    km: miles(o.km)
+/* Datos que se reemplazan en las plantillas. La orden puede ser null (mensaje general). */
+function datosMensaje(o, c){
+  const v = o ? vehiculo(o.vehiculoId) : null;
+  c = c || cliente(v?.clienteId);
+  const primerNombre = (c?.nombre||'').trim().split(' ')[0] || 'cliente';
+  return {
+    cliente: primerNombre.charAt(0).toUpperCase() + primerNombre.slice(1),
+    vehiculo: v ? nombreVeh(v) : 'vehículo', patente: v?.patente||'',
+    trabajos: o ? (o.tareas.map(t => '- ' + t.texto).join('\n') || '- (sin detalle)') : '',
+    total: o ? plata(o.total) : '', taller: db.config.taller, direccion: db.config.direccion,
+    orden: o ? nroOrden(o.numero) : '', km: o ? miles(o.km) : ''
   };
-  return (db.config.plantilla || PLANTILLA_DEFECTO).replace(/\{(\w+)\}/g, (m,k) => k in datos ? datos[k] : m);
+}
+function armarMensaje(plantilla, o, c){
+  const d = datosMensaje(o, c);
+  return String(plantilla||'').replace(/\{(\w+)\}/g, (m,k) => k in d ? d[k] : m);
+}
+const mensajeListo = (o) => armarMensaje(db.config.plantilla || PLANTILLA_DEFECTO, o);
+/* Al guardar un mensaje escrito a mano, los datos concretos vuelven a ser {campos} para reusarlo con otros clientes */
+function aPlantilla(texto, o, c){
+  const d = datosMensaje(o, c);
+  const pares = ['trabajos','vehiculo','direccion','taller','total','patente','cliente'].map(k => [k, d[k]]).filter(([k,v]) => v && String(v).length > 1).sort((a,b) => String(b[1]).length - String(a[1]).length);
+  let t = texto;
+  for (const [k,v] of pares) t = t.split(v).join('{'+k+'}');
+  return t;
 }
 
 /* ---------- Toast y modales ---------- */
@@ -624,7 +660,7 @@ function vOrden(r){
   const bloqueListo = (o.estado === 'Listo' || o.estado === 'Entregado') ? `
     <div class="aviso-listo">
       <h3>${o.estado==='Listo' ? 'Listo para retirar' : 'Entregado el ' + fecha(o.fechaEntrega)}</h3>
-      <div class="chico-txt">${ultimoAviso ? 'Último aviso por WhatsApp: ' + fechaHora(ultimoAviso) : 'Todavía no se le avisó al cliente.'}</div>
+      <div class="chico-txt">${ultimoAviso ? 'Último mensaje por WhatsApp: ' + fechaHora(ultimoAviso) : 'Todavía no se le avisó al cliente.'}</div>
       <div class="acc">
         <button class="btn wa" data-act="wa">${ico('wa')}${ultimoAviso ? 'Volver a avisar' : 'Avisar por WhatsApp'}</button>
         ${o.estado==='Listo' ? `<button class="btn" data-act="estado" data-e="Entregado">${ico('check')}Marcar entregado</button>` : ''}
@@ -649,6 +685,7 @@ function vOrden(r){
       <dt>Km</dt><dd>${o.km ? miles(o.km)+' km' : '—'}</dd>
     </dl>
   </div>
+  ${c ? `<div class="card"><h3>Mensajes al cliente</h3>${botonesMensajes(c.id, o.id)}</div>` : ''}
   <div class="card">
     <h3>Estado</h3>
     <div class="pasos" role="group" aria-label="Cambiar estado">${pasos}</div>
@@ -675,7 +712,7 @@ function vOrden(r){
   <div class="card">
     <h3>Historial de la orden</h3>
     <ul class="timeline">${(o.historial||[]).slice().reverse().map(h => `<li><b>${esc(h.estado)}</b> · <span class="muted">${fechaHora(h.fecha)}</span></li>`).join('')}
-    ${(o.avisos||[]).slice().reverse().map(a => `<li>Aviso por WhatsApp · <span class="muted">${fechaHora(a.fecha)}</span></li>`).join('')}</ul>
+    ${(o.avisos||[]).slice().reverse().map(a => `<li>WhatsApp: ${esc(a.tipo || 'Auto listo')} · <span class="muted">${fechaHora(a.fecha)}</span></li>`).join('')}</ul>
   </div>
   <div class="form-acc" style="margin-top:12px">
     <button class="btn" data-act="imprimir">${ico('imprimir')}Comprobante / PDF</button>
@@ -696,28 +733,101 @@ function cambiarEstado(o, nuevo){
   else toast('Estado: ' + nuevo, 'ok');
 }
 
-/* Modal de WhatsApp: mensaje editable + abrir app o WhatsApp Web */
-function abrirWA(o, recienListo=false){
-  const v = vehiculo(o.vehiculoId), c = cliente(v?.clienteId);
+/* ---------- Mensajes por WhatsApp ---------- */
+const ordenesDeCli = (cid) => { const ids = vehiculosDeCli(cid).map(v => v.id); return db.ordenes.filter(o => ids.includes(o.vehiculoId)).sort((a,b) => b.fechaIngreso.localeCompare(a.fechaIngreso)); };
+const ordenSugerida = (cid) => { const os = ordenesDeCli(cid); return os.find(o => o.estado === 'Listo') || os.find(o => o.estado !== 'Entregado') || os[0] || null; };
+function plantillaDe(tipo){
+  if (tipo === 'listo') return db.config.plantilla || PLANTILLA_DEFECTO;
+  if (tipo === 'demora') return db.config.plantillaDemora || PLANTILLA_DEMORA;
+  if (tipo.startsWith('m:')) return db.mensajes.find(m => 'm:'+m.id === tipo)?.texto || '';
+  return 'Hola {cliente}! Te escribimos de {taller}.\n\n';
+}
+function nombreTipo(tipo){
+  if (tipo === 'listo') return 'Auto listo';
+  if (tipo === 'demora') return 'Se queda más tiempo';
+  if (tipo.startsWith('m:')) return db.mensajes.find(m => 'm:'+m.id === tipo)?.titulo || 'Mensaje';
+  return 'Mensaje personalizado';
+}
+/* Fila de botones de mensajes (ficha del cliente y detalle de la orden) */
+function botonesMensajes(cid, oid){
+  const c = cliente(cid); if (!c) return '';
+  const num = normalizarWA(c.telefono);
+  if (!num) return `<div class="msg-btns"><span class="chico-txt" style="color:var(--danger)">El WhatsApp de ${esc(c.nombre)} no es válido.</span><button class="btn chico" data-act="editar-cliente" data-id="${c.id}">Corregir número</button></div>`;
+  const hayOrden = oid || ordenesDeCli(cid).length;
+  const b = (tipo, txt, icon, cls='') => `<button class="btn ${cls}" data-act="msg" data-tipo="${esc(tipo)}" data-cli="${c.id}" data-ord="${oid||''}">${ico(icon)}${esc(txt)}</button>`;
+  return `<div class="msg-btns">
+    ${oid ? '' : `<a class="btn wa" href="https://wa.me/${num}" target="_blank" rel="noopener">${ico('wa')}Abrir chat</a>`}
+    ${hayOrden ? b('listo','Auto listo para retirar','check') + b('demora','Se queda un poco más','reloj') : ''}
+    ${db.mensajes.map(m => b('m:'+m.id, m.titulo, 'mensaje')).join('')}
+    ${b('nuevo','Crear mensaje personalizado','mas','punteado')}
+  </div>`;
+}
+/* Compatibilidad: aviso de "auto listo" desde la orden */
+function abrirWA(o, recienListo=false){ abrirMensaje({cid: vehiculo(o.vehiculoId)?.clienteId, oid:o.id, tipo:'listo', recienListo}); }
+
+/* Modal: arma el mensaje, se puede retocar y se abre WhatsApp (app o Web). No es un bot: lo envían ellos. */
+function abrirMensaje({cid, oid, tipo, recienListo=false}){
+  const c = cliente(cid);
   const num = normalizarWA(c?.telefono);
   if (!num){
     abrirModal('Falta el WhatsApp', `<p>El número de ${esc(c?.nombre||'este cliente')} no es válido${c?.telefono ? ` («${esc(c.telefono)}»)` : ''}. Cargalo con código de área, por ejemplo <b>2972 412345</b>.</p>
       <div class="form-acc"><button class="btn" data-act="cerrar-modal">Cerrar</button>${c ? `<button class="btn pri" data-act="editar-cliente" data-id="${c.id}">Corregir número</button>` : ''}</div>`);
     return;
   }
-  const txt = mensajeListo(o);
-  abrirModal(recienListo ? '¡Auto listo! Avisale al cliente' : 'Avisar por WhatsApp', `
-    <p class="chico-txt" style="margin-top:0">Se abre WhatsApp con este mensaje ya escrito para <b>${esc(c.nombre)}</b> (${mostrarWA(num)}). Solo tenés que tocar <b>Enviar</b>.</p>
-    <div class="campo"><label for="wa-txt">Mensaje (lo podés retocar)</label>
-      <textarea id="wa-txt" rows="10" style="min-height:220px">${esc(txt)}</textarea></div>
+  const ords = ordenesDeCli(cid);
+  const necesitaOrden = tipo === 'listo' || tipo === 'demora';
+  let sel = oid ? orden(oid) : ordenSugerida(cid);
+  if (necesitaOrden && !sel){ toast('Este cliente todavía no tiene órdenes cargadas','error'); return; }
+  const esNuevo = tipo === 'nuevo';
+  const titulo = recienListo ? '¡Auto listo! Avisale al cliente' : tipo === 'listo' ? 'Auto listo para retirar' : tipo === 'demora' ? 'Avisar que se queda más tiempo' : esNuevo ? 'Crear mensaje personalizado' : esc(nombreTipo(tipo));
+  const elegirAuto = !oid && ords.length > 1;
+  const opciones = (esNuevo || !necesitaOrden ? `<option value="">Sin auto (mensaje general)</option>` : '') +
+    ords.map(o => { const v = vehiculo(o.vehiculoId); return `<option value="${o.id}" ${sel?.id===o.id?'selected':''}>${esc(v?.patente)} · ${esc(nombreVeh(v))} · ${esc(o.estado)}</option>`; }).join('');
+  const texto = armarMensaje(plantillaDe(tipo), sel, c);
+  abrirModal(titulo, `
+    <p class="chico-txt" style="margin-top:0">Para <b>${esc(c.nombre)}</b> (${mostrarWA(num)}). Se abre WhatsApp con el mensaje escrito y solo tocás <b>Enviar</b>.</p>
+    ${elegirAuto ? `<div class="campo"><label for="cm-orden">¿De qué auto es el mensaje?</label><select id="cm-orden">${opciones}</select></div>` : ''}
+    <div class="campo"><label for="wa-txt">${esNuevo ? 'Escribí el mensaje' : 'Mensaje (lo podés retocar)'}</label>
+      <textarea id="wa-txt" rows="9" style="min-height:200px">${esc(texto)}</textarea></div>
+    ${esNuevo ? `
+    <label class="check-fila"><input type="checkbox" id="cm-guardar"> Guardar este mensaje como botón para reusarlo</label>
+    <div class="campo" id="cm-c-nombre" hidden><label for="cm-nombre">Nombre del botón</label><input id="cm-nombre" maxlength="40" placeholder="Ej.: Falta un repuesto"><span class="err-msg">Ponele un nombre al botón.</span></div>` : ''}
     <div class="form-acc" style="justify-content:stretch">
-      <a class="btn wa" style="flex:1" id="wa-app" href="${linkWA(num, txt)}" target="_blank" rel="noopener">${ico('wa')}Abrir WhatsApp</a>
-      <a class="btn" style="flex:1" id="wa-web" href="${linkWAWeb(num, txt)}" target="_blank" rel="noopener">${ico('web')}WhatsApp Web</a>
+      <a class="btn wa" style="flex:1" id="wa-app" href="#" target="_blank" rel="noopener">${ico('wa')}Abrir WhatsApp</a>
+      <a class="btn" style="flex:1" id="wa-web" href="#" target="_blank" rel="noopener">${ico('web')}WhatsApp Web</a>
     </div>
-    <p class="muted chico-txt" style="margin-bottom:0">En la compu, «WhatsApp Web» abre directo el chat en el navegador.</p>`);
+    ${esNuevo ? `<button class="btn bloque" style="margin-top:8px" id="cm-solo-guardar">${ico('check')}Guardar el botón sin enviar</button>` : ''}`);
   const ta = $('#wa-txt');
-  ta.addEventListener('input', () => { $('#wa-app').href = linkWA(num, ta.value); $('#wa-web').href = linkWAWeb(num, ta.value); });
-  const registrar = () => { o.avisos = o.avisos || []; o.avisos.push({fecha:new Date().toISOString()}); guardar(); setTimeout(() => { cerrarModal(); render(); toast('Aviso registrado en la orden','ok'); }, 300); };
+  let editado = false;
+  const actualizar = () => { $('#wa-app').href = linkWA(num, ta.value); $('#wa-web').href = linkWAWeb(num, ta.value); };
+  actualizar();
+  ta.addEventListener('input', () => { editado = true; actualizar(); });
+  $('#cm-orden')?.addEventListener('change', (e) => {
+    sel = e.target.value ? orden(e.target.value) : null;
+    if (!esNuevo && (!editado || true)){ ta.value = armarMensaje(plantillaDe(tipo), sel, c); editado = false; actualizar(); }
+  });
+  $('#cm-guardar')?.addEventListener('change', (e) => { $('#cm-c-nombre').hidden = !e.target.checked; if (e.target.checked) $('#cm-nombre').focus(); });
+  /* Guarda el mensaje personalizado como botón. Devuelve false si falta el nombre. */
+  const guardarBoton = () => {
+    if (!$('#cm-guardar')?.checked) return true;
+    const nom = $('#cm-nombre').value.trim();
+    if (!nom){ $('#cm-c-nombre').classList.add('err'); $('#cm-nombre').focus(); return false; }
+    db.mensajes.push({id:uid(), titulo:nom, texto:aPlantilla(ta.value, sel, c)});
+    guardar(); return true;
+  };
+  $('#cm-nombre')?.addEventListener('input', () => $('#cm-c-nombre').classList.remove('err'));
+  $('#cm-solo-guardar')?.addEventListener('click', () => {
+    if (!$('#cm-guardar').checked){ $('#cm-guardar').checked = true; $('#cm-c-nombre').hidden = false; }
+    if (!$('#cm-nombre').value.trim()){ $('#cm-c-nombre').classList.add('err'); $('#cm-nombre').focus(); return; }
+    guardarBoton(); cerrarModal(); render(); toast('Botón guardado','ok');
+  });
+  const registrar = (e) => {
+    if (!ta.value.trim()){ e.preventDefault(); toast('Escribí el mensaje primero','error'); ta.focus(); return; }
+    if (!guardarBoton()){ e.preventDefault(); return; }
+    if (sel){ sel.avisos = sel.avisos || []; sel.avisos.push({fecha:new Date().toISOString(), tipo:nombreTipo(tipo)}); }
+    guardar();
+    setTimeout(() => { cerrarModal(); render(); toast(sel ? 'Mensaje registrado en la orden ' + nroOrden(sel.numero) : 'Mensaje abierto en WhatsApp','ok'); }, 300);
+  };
   $('#wa-app').addEventListener('click', registrar);
   $('#wa-web').addEventListener('click', registrar);
 }
@@ -1096,7 +1206,7 @@ function vCliente(r){
   <div class="card">
     <dl class="kv"><dt>WhatsApp</dt><dd>${esc(c.telefono)} ${num ? '' : '<span class="badge e-presupuestado">Revisar número</span>'}</dd>
     <dt>Notas</dt><dd style="white-space:pre-wrap">${esc(c.notas||'—')}</dd></dl>
-    ${num ? `<a class="btn wa" style="margin-top:12px" href="https://wa.me/${num}" target="_blank" rel="noopener">${ico('wa')}Abrir chat</a>` : ''}
+    ${botonesMensajes(c.id, null)}
   </div>
   <h2 style="margin:20px 0 10px">Vehículos</h2>
   ${vs.length ? `<div class="lista cols">${vs.map(v => `<a class="ot" href="#vehiculo-${v.id}"><div class="ot-top">${patenteHTML(v.patente)}<span class="muted chico-txt">${esc(v.tipo)}</span></div><div class="ot-veh">${esc(nombreVeh(v))}</div><div class="ot-cli">${ordenesDeVeh(v.id).length} órdenes</div></a>`).join('')}</div>`
@@ -1162,6 +1272,18 @@ function vAjustes(){
     <div class="form-acc" style="justify-content:flex-start;margin-top:0"><button type="button" class="btn chico" data-act="plantilla-def">${ico('reset')}Volver al texto original</button></div>
     ${ej ? `<details style="margin-top:12px"><summary style="cursor:pointer;font-weight:600">Ver cómo queda con la orden ${nroOrden(ej.numero)}</summary><pre id="cfg-prev" style="white-space:pre-wrap;font-family:inherit;background:#f6f8fb;border:1px solid var(--borde);border-radius:8px;padding:12px;font-size:14px">${esc(mensajeListo(ej))}</pre></details>` : ''}
   </div>
+  <div class="card"><h3>Mensaje de «se queda un poco más»</h3>
+    <div class="campo"><label for="cfg-pl2">Plantilla</label><textarea id="cfg-pl2" rows="6" style="min-height:150px">${esc(k.plantillaDemora||PLANTILLA_DEMORA)}</textarea>
+      <span class="ayuda">Mismos campos: {cliente} {vehiculo} {patente} {taller}…</span></div>
+    <div class="form-acc" style="justify-content:flex-start;margin-top:0"><button type="button" class="btn chico" data-act="plantilla2-def">${ico('reset')}Volver al texto original</button></div>
+  </div>
+  <div class="card"><h3>Mensajes guardados</h3>
+    <p class="chico-txt muted" style="margin-top:0">Se crean con «+ Crear mensaje personalizado» en la ficha del cliente o en la orden, y aparecen como botones.</p>
+    ${db.mensajes.length ? db.mensajes.map(m => `<div class="msg-guardado"><div><b>${esc(m.titulo)}</b><p>${esc(m.texto)}</p></div>
+      <button type="button" class="btn icono chico" style="width:40px" data-act="editar-msg" data-id="${m.id}" aria-label="Editar ${esc(m.titulo)}">${ico('editar')}</button>
+      <button type="button" class="btn icono chico peligro" style="width:40px" data-act="borrar-msg" data-id="${m.id}" aria-label="Borrar ${esc(m.titulo)}">${ico('borrar')}</button></div>`).join('')
+      : `<div class="vacio" style="padding:16px"><p style="margin:0">Todavía no guardaste mensajes.</p></div>`}
+  </div>
   <div class="card"><h3>Acceso</h3>
     <div class="campo" id="cfg-c-pin"><label for="cfg-pin">PIN del taller</label><input id="cfg-pin" inputmode="numeric" maxlength="8" value="${esc(k.pin)}"><span class="ayuda">De 4 a 8 números. Es el mismo para los dos.</span><span class="err-msg">El PIN tiene que tener entre 4 y 8 números.</span></div>
   </div>
@@ -1185,7 +1307,7 @@ vAjustes.despues = () => {
     const nom = $('#cfg-nom').value.trim(), pin = $('#cfg-pin').value.trim();
     $('#cfg-c-nom').classList.toggle('err', !nom); $('#cfg-c-pin').classList.toggle('err', !/^\d{4,8}$/.test(pin));
     if (!nom || !/^\d{4,8}$/.test(pin)) return;
-    Object.assign(db.config, {taller:nom, direccion:$('#cfg-dir').value.trim(), telefono:$('#cfg-tel').value.trim(), pin, plantilla:$('#cfg-pl').value || PLANTILLA_DEFECTO});
+    Object.assign(db.config, {taller:nom, direccion:$('#cfg-dir').value.trim(), telefono:$('#cfg-tel').value.trim(), pin, plantilla:$('#cfg-pl').value || PLANTILLA_DEFECTO, plantillaDemora:$('#cfg-pl2').value || PLANTILLA_DEMORA});
     guardar(); render(); toast('Ajustes guardados','ok');
   };
 };
@@ -1236,6 +1358,21 @@ document.addEventListener('click', (e) => {
     case 'borrar-cliente': { const c = cliente(el.dataset.id), n = vehiculosDeCli(c.id).length;
         if (n) abrirModal('No se puede borrar', `<p>${esc(c.nombre)} tiene ${n} ${n===1?'vehículo':'vehículos'} a su nombre. Pasalos a otro dueño o borralos primero.</p><div class="form-acc"><button class="btn pri" data-act="cerrar-modal">Entendido</button></div>`);
         else confirmar('Borrar cliente', `¿Borrar a ${esc(c.nombre)}?`, 'Borrar', () => { db.clientes = db.clientes.filter(x => x.id !== c.id); guardar(); ir('#clientes'); toast('Cliente borrado'); }); } break;
+    case 'msg': abrirMensaje({cid:el.dataset.cli, oid:el.dataset.ord || null, tipo:el.dataset.tipo}); break;
+    case 'plantilla2-def': $('#cfg-pl2').value = PLANTILLA_DEMORA; break;
+    case 'borrar-msg': { const m = db.mensajes.find(x => x.id === el.dataset.id);
+        if (m) confirmar('Borrar mensaje guardado', `¿Borrar el botón «${esc(m.titulo)}»?`, 'Borrar', () => { db.mensajes = db.mensajes.filter(x => x.id !== m.id); guardar(); render(); toast('Mensaje borrado'); }); } break;
+    case 'editar-msg': { const m = db.mensajes.find(x => x.id === el.dataset.id); if (!m) break;
+        abrirModal('Editar mensaje guardado', `<form id="form-msg" novalidate>
+          <div class="campo" id="em-c-tit"><label for="em-tit">Nombre del botón</label><input id="em-tit" maxlength="40" value="${esc(m.titulo)}"><span class="err-msg">Ponele un nombre.</span></div>
+          <div class="campo" id="em-c-txt"><label for="em-txt">Texto</label><textarea id="em-txt" rows="8" style="min-height:180px">${esc(m.texto)}</textarea>
+            <span class="ayuda">Podés usar: {cliente} {vehiculo} {patente} {trabajos} {total} {taller} {direccion} {orden} {km}</span><span class="err-msg">Escribí el mensaje.</span></div>
+          <div class="form-acc"><button type="button" class="btn" data-act="cerrar-modal">Cancelar</button><button class="btn pri" type="submit">Guardar</button></div></form>`);
+        $('#form-msg').onsubmit = (ev) => { ev.preventDefault();
+          const t = $('#em-tit').value.trim(), x = $('#em-txt').value.trim();
+          $('#em-c-tit').classList.toggle('err', !t); $('#em-c-txt').classList.toggle('err', !x); if (!t || !x) return;
+          Object.assign(m, {titulo:t, texto:x}); guardar(); cerrarModal(); render(); toast('Mensaje actualizado','ok'); };
+      } break;
     case 'plantilla-def': $('#cfg-pl').value = PLANTILLA_DEFECTO; $('#cfg-pl').dispatchEvent(new Event('input')); break;
     case 'exportar': exportarCSV(); break;
     case 'copiar-excel': {
