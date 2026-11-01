@@ -22,6 +22,7 @@
   --radio:10px; --nav-h:64px;
 }
 *{box-sizing:border-box}
+[hidden]{display:none!important}
 html,body{margin:0}
 body{font-family:var(--f-texto);font-size:16px;line-height:1.5;color:var(--texto);background:var(--fondo);-webkit-font-smoothing:antialiased}
 a{color:var(--azul)}
@@ -47,7 +48,7 @@ svg.i{width:20px;height:20px;flex:none;stroke:currentColor;fill:none;stroke-widt
 .side{display:none}
 main{flex:1;min-width:0;padding:16px 16px calc(var(--nav-h) + 24px)}
 .bottomnav{position:fixed;left:0;right:0;bottom:0;height:var(--nav-h);background:#fff;border-top:1px solid var(--borde);display:flex;z-index:30;padding-bottom:env(safe-area-inset-bottom)}
-.bottomnav a{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;text-decoration:none;color:var(--muted);font-size:12px;font-weight:500;min-height:44px}
+.bottomnav a{flex:1;min-width:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;text-decoration:none;color:var(--muted);font-size:11px;font-weight:500;min-height:44px}
 .bottomnav a.on{color:var(--azul)}
 .bottomnav a.on svg{stroke-width:2.4}
 @media (min-width:900px){
@@ -133,6 +134,26 @@ main{flex:1;min-width:0;padding:16px 16px calc(var(--nav-h) + 24px)}
 .paso.actual{background:var(--azul);color:#fff;border-color:var(--azul)}
 .paso.actual.listo{background:var(--ok);border-color:var(--ok)}
 
+.h-queja{background:var(--danger-bg);color:var(--danger)}
+.h-pend{background:var(--warn-bg);color:var(--warn)}
+.h-gar{background:var(--azul-claro);color:var(--azul-2)}
+.h-obs{background:#eceff4;color:#3d4757}
+.alerta-hojas{background:#fff6ec;border:1px solid #f2c79c;border-radius:12px;padding:12px 14px;margin-bottom:12px;font-size:14.5px}
+.alerta-hojas b{display:flex;align-items:center;gap:8px;color:#8a3f0a}
+.alerta-hojas ul{margin:8px 0 0;padding-left:20px}
+.alerta-hojas li{margin-top:4px}
+.encontrado .alerta-hojas{width:100%;margin:4px 0 0}
+.filtros{padding:0;margin-bottom:12px}
+.filtros summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:10px;padding:14px 16px;font-weight:600;min-height:48px}
+.filtros summary::-webkit-details-marker{display:none}
+.filtros summary .n{margin-left:auto;font-size:13px;color:var(--azul);font-weight:600}
+.filtros-in{padding:0 16px 16px}
+.filtros-in .campo{margin-bottom:10px}
+.filtros-in .chips{margin-bottom:10px}
+.resumen-hist{display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center;justify-content:space-between;background:#fff;border:1px solid var(--borde);border-radius:12px;padding:12px 14px;margin-bottom:12px}
+.resumen-hist b{font-family:var(--f-titulo);font-size:22px;font-weight:600}
+.hist .h-veh{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:6px}
+.desc-hoja{white-space:pre-wrap;font-size:15.5px;margin:0}
 .msg-btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
 .btn.punteado{border-style:dashed;border-color:var(--azul-borde);color:var(--azul);background:#f7faff}
 .msg-guardado{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--borde);border-radius:10px;padding:10px 12px;margin-top:8px}
@@ -324,6 +345,10 @@ const IC = {
   reset:'<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/>',
   check:'<path d="M5 12l5 5L20 7"/>',
   reloj:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  historial:'<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l3 2"/>',
+  hoja:'<path d="M14 3H6v18h12V7z"/><path d="M14 3v4h4M9 12h6M9 16h6"/>',
+  alerta:'<path d="M12 3l10 18H2z"/><path d="M12 10v5M12 18h.01"/>',
+  filtro:'<path d="M3 5h18l-7 8v6l-4 2v-8z"/>',
   mensaje:'<path d="M4 5h16v11H8l-4 4z"/><path d="M8 9h8M8 12h5"/>'
 };
 const ico = (n, extra='') => `<svg class="i" viewBox="0 0 24 24" aria-hidden="true" ${extra}>${IC[n]||''}</svg>`;
@@ -402,6 +427,12 @@ function datosEjemplo(){
     version:1,
     config:{ taller:'Taller CKP', direccion:'Av. San Martín 1234, Junín de los Andes', telefono:'2972 500000', pin:'1234', plantilla:PLANTILLA_DEFECTO, plantillaDemora:PLANTILLA_DEMORA },
     clientes, vehiculos, ordenes, proximoNumero: num+1,
+    hojas:[
+      {id:'h1', vehiculoId:'v3', tipo:'Queja / reclamo', fecha:enDias(-8), descripcion:'Volvió diciendo que sigue un ruido leve en el tren delantero al pasar lomos de burro, después del cambio de bujes.', estado:'Abierta', ordenId:'o5', fotos:[], recordar:enDias(2), resolucion:'', resueltaFecha:''},
+      {id:'h2', vehiculoId:'v5', tipo:'Pendiente', fecha:enDias(-160), descripcion:'Pastillas traseras al 40 %. El cliente prefirió cambiarlas en el próximo service.', estado:'Abierta', ordenId:'o2', fotos:[], recordar:enDias(12), resolucion:'', resueltaFecha:''},
+      {id:'h3', vehiculoId:'v2', tipo:'Garantía', fecha:enDias(-40), descripcion:'Vibración a más de 100 km/h. Se rebalanceó la rueda delantera derecha sin cargo.', estado:'Resuelta', ordenId:'o4', fotos:[], recordar:'', resolucion:'Rebalanceo sin cargo. Quedó bien.', resueltaFecha:diasAtras(40)},
+      {id:'h4', vehiculoId:'v8', tipo:'Observación', fecha:enDias(0), descripcion:'Pidió presupuesto de 4 cubiertas para el invierno. Avisarle cuando lleguen.', estado:'Abierta', ordenId:'o11', fotos:[], recordar:enDias(20), resolucion:'', resueltaFecha:''}
+    ],
     mensajes:[ {id:'m1', titulo:'Presupuesto listo', texto:'Hola {cliente}! Te escribimos de {taller}.\nYa tenemos el presupuesto de tu {vehiculo} (patente {patente}): {total}.\n¿Nos confirmás si avanzamos con el arreglo?'} ]
   };
 }
@@ -415,6 +446,7 @@ function cargar(){
 /* Completa campos nuevos en datos guardados con una versión anterior */
 function migrar(){
   db.mensajes = db.mensajes || [];
+  db.hojas = db.hojas || [];
   db.config.plantillaDemora = db.config.plantillaDemora || PLANTILLA_DEMORA;
 }
 function guardar(){
@@ -520,9 +552,10 @@ const NAV = [
   {id:'vehiculos', txt:'Vehículos', ic:'auto'},
   {id:'clientes', txt:'Clientes', ic:'clientes'},
   {id:'services', txt:'Services', ic:'service'},
+  {id:'historial', txt:'Historial', ic:'historial'},
   {id:'ajustes', txt:'Ajustes', ic:'ajustes'}
 ];
-const SECCION = {orden:'taller', nueva:'taller', editar:'taller', vehiculo:'vehiculos', cliente:'clientes'};
+const SECCION = {orden:'taller', nueva:'taller', editar:'taller', vehiculo:'vehiculos', cliente:'clientes', hoja:'historial'};
 function ruta(){ const h = location.hash.replace(/^#/,''); const i = h.indexOf('-'); return i < 0 ? {v:h||'taller', id:''} : {v:h.slice(0,i), id:h.slice(i+1)}; }
 const ir = (h) => { location.hash = h; };
 
@@ -534,7 +567,7 @@ function render(){
   const sec = SECCION[r.v] || r.v;
   $$('[data-nav]').forEach(a => { const on = a.dataset.nav === sec; a.classList.toggle('on', on); on ? a.setAttribute('aria-current','page') : a.removeAttribute('aria-current'); });
   $('#marca-nombre').textContent = db.config.taller;
-  const vistas = {taller:vTaller, orden:vOrden, nueva:vForm, editar:vForm, vehiculos:vVehiculos, vehiculo:vVehiculo, clientes:vClientes, cliente:vCliente, services:vServices, ajustes:vAjustes};
+  const vistas = {taller:vTaller, orden:vOrden, nueva:vForm, editar:vForm, vehiculos:vVehiculos, vehiculo:vVehiculo, clientes:vClientes, cliente:vCliente, services:vServices, historial:vHistorial, hoja:vHoja, ajustes:vAjustes};
   const fn = vistas[r.v] || vTaller;
   $('#main').innerHTML = fn(r);
   if (fn.despues) fn.despues(r);
@@ -610,7 +643,7 @@ function tarjetaOrden(o){
   return `<a class="ot" href="#orden-${o.id}">
     <div class="ot-top">${patenteHTML(v?.patente||'—')}${badge(o.estado)}</div>
     <div class="ot-veh">${esc(nombreVeh(v))}</div>
-    <div class="ot-cli">${esc(c?.nombre||'Sin cliente')}</div>
+    <div class="ot-cli">${esc(c?.nombre||'Sin cliente')}${(() => { const n = hojasAbiertas(v?.id).length; return n ? ` · <span class="badge h-pend">${n} ${n===1?'hoja abierta':'hojas abiertas'}</span>` : ''; })()}</div>
     <div class="ot-tareas">${t || '<span class="muted">Sin tareas cargadas</span>'}${mas}</div>
     <div class="ot-bottom"><span>${nroOrden(o.numero)} · ${o.estado==='Entregado' ? 'entregado '+fecha(o.fechaEntrega) : 'ingresó '+hace(o.fechaIngreso)}</span><strong>${o.total ? plata(o.total) : '<span class="muted" style="font-size:14px">Sin monto</span>'}</strong></div>
   </a>`;
@@ -675,6 +708,7 @@ function vOrden(r){
     <button class="btn icono peligro" data-act="borrar-orden" aria-label="Borrar orden">${ico('borrar')}</button>
   </div>
   ${bloqueListo}
+  ${alertaHojasHTML(v?.id)}
   <div class="card">
     <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:10px">${patenteHTML(v?.patente||'—', true)}${badge(o.estado)}</div>
     <dl class="kv">
@@ -696,6 +730,11 @@ function vOrden(r){
     ${o.tareas.length ? `<ul class="tareas">${o.tareas.map(t => `<li class="${t.hecha?'hecha':''}"><label><input type="checkbox" data-act="tarea" data-t="${t.id}" ${t.hecha?'checked':''}><span>${esc(t.texto)}</span></label></li>`).join('')}</ul>`
       : `<p class="muted">Todavía no hay trabajos cargados. <a href="#editar-${o.id}">Agregar</a></p>`}
     <div class="total-box"><span>Total</span><b>${o.total ? plata(o.total) : '<span class="muted" style="font-size:18px">Sin monto</span>'}</b></div>
+  </div>
+  <div class="card">
+    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:10px"><h3 style="margin:0;flex:1">Hojas de esta orden</h3>
+      <button class="btn chico punteado" data-act="nueva-hoja" data-vid="${v?.id}" data-oid="${o.id}">${ico('mas')}Agregar hoja</button></div>
+    ${(() => { const hs = db.hojas.filter(h => h.ordenId === o.id); return hs.length ? `<div class="lista">${hs.map(h => tarjetaHoja(h,false)).join('')}</div>` : '<p class="muted chico-txt" style="margin:0">Quejas, pendientes, garantías u otras situaciones de este trabajo.</p>'; })()}
   </div>
   <div class="card">
     <h3>Fotos</h3>
@@ -1002,7 +1041,7 @@ function buscarPatente(){
   if (v){
     const c = cliente(v.clienteId), n = ordenesDeVeh(v.id).length;
     F.vehiculoId = v.id;
-    box.innerHTML = `<div class="encontrado">${patenteHTML(v.patente)}<div style="flex:1;min-width:180px"><b>${esc(nombreVeh(v))}</b><div class="chico-txt">${esc(c?.nombre||'Sin cliente')} · ${esc(c?.telefono||'')}${F.editando?'':` · ${n} ${n===1?'orden anterior':'órdenes anteriores'}`}</div></div>${F.editando?'':`<a class="btn chico" href="#vehiculo-${v.id}">Ver historial</a>`}</div>`;
+    box.innerHTML = `<div class="encontrado">${patenteHTML(v.patente)}<div style="flex:1;min-width:180px"><b>${esc(nombreVeh(v))}</b><div class="chico-txt">${esc(c?.nombre||'Sin cliente')} · ${esc(c?.telefono||'')}${F.editando?'':` · ${n} ${n===1?'orden anterior':'órdenes anteriores'}`}</div></div>${F.editando?'':`<a class="btn chico" href="#vehiculo-${v.id}">Ver historial</a>`}${alertaHojasHTML(v.id)}</div>`;
     nuevo.hidden = true;
   } else {
     F.vehiculoId = null; box.innerHTML = '';
@@ -1095,6 +1134,7 @@ function listaVehHTML(){
   return `<div class="lista cols">${lista.map(v => { const c = cliente(v.clienteId), ords = ordenesDeVeh(v.id), ult = ords[0];
     return `<a class="ot" href="#vehiculo-${v.id}"><div class="ot-top">${patenteHTML(v.patente)}<span class="muted chico-txt">${esc(v.tipo)}</span></div>
       <div class="ot-veh">${esc(nombreVeh(v))}</div><div class="ot-cli">${esc(c?.nombre||'Sin cliente')}</div>
+      ${(() => { const n = hojasAbiertas(v.id).length; return n ? `<div style="margin-top:6px"><span class="badge h-pend">${n} ${n===1?'hoja abierta':'hojas abiertas'}</span></div>` : ''; })()}
       <div class="ot-bottom"><span>${ords.length} ${ords.length===1?'orden':'órdenes'}</span><span>${ult ? 'Última: '+fecha(ult.fechaIngreso) : 'Sin órdenes'}</span></div></a>`; }).join('')}</div>`;
 }
 function vVehiculos(){
@@ -1117,6 +1157,7 @@ function vVehiculo(r){
     <button class="btn icono" data-act="editar-vehiculo" data-id="${v.id}" aria-label="Editar vehículo">${ico('editar')}</button>
     <button class="btn icono peligro" data-act="borrar-vehiculo" data-id="${v.id}" aria-label="Borrar vehículo">${ico('borrar')}</button>
   </div>
+  ${alertaHojasHTML(v.id)}
   <div class="grid2">
     <div class="card" style="margin:0">
       <div style="margin-bottom:12px">${patenteHTML(v.patente, true)}</div>
@@ -1134,6 +1175,9 @@ function vVehiculo(r){
       <a class="btn pri bloque" style="margin-top:14px" href="#nueva-${v.id}">${ico('mas')}Nueva orden para este vehículo</a>
     </div>
   </div>
+  <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:20px 0 10px"><h2 style="flex:1">Hojas del vehículo</h2>
+    <button class="btn pri" data-act="nueva-hoja" data-vid="${v.id}">${ico('mas')}Nueva hoja</button></div>
+  ${(() => { const hs = hojasDeVeh(v.id); return hs.length ? `<div class="lista cols">${hs.map(h => tarjetaHoja(h,false)).join('')}</div>` : `<div class="vacio"><p style="margin:0">Sin hojas. Usalas para anotar quejas, cambios que dejó para más adelante, garantías u otras situaciones.</p></div>`; })()}
   <h2 style="margin:20px 0 10px">Historial de trabajos</h2>
   ${ords.length ? `<div class="hist">${ords.map(o => `<a href="#orden-${o.id}"><div class="h-top"><span>${fecha(o.fechaIngreso)} · ${nroOrden(o.numero)}${o.km?' · '+miles(o.km)+' km':''}</span>${badge(o.estado)}</div>
     <div class="h-t">${o.tareas.map(t => esc(t.texto)).join(' · ') || '<span class="muted">Sin detalle</span>'}</div>
@@ -1254,6 +1298,284 @@ function vServices(){
 }
 
 /* =========================================================
+   HOJAS DEL VEHÍCULO (quejas, pendientes, garantías, observaciones)
+   ========================================================= */
+const TIPOS_HOJA = {'Queja / reclamo':'h-queja', 'Pendiente':'h-pend', 'Garantía':'h-gar', 'Observación':'h-obs'};
+const hoja = (id) => db.hojas.find(h => h.id === id);
+const hojasDeVeh = (vid) => db.hojas.filter(h => h.vehiculoId === vid).sort((a,b) => (b.fecha||'').localeCompare(a.fecha||''));
+const hojasAbiertas = (vid) => vid ? db.hojas.filter(h => h.vehiculoId === vid && h.estado === 'Abierta') : [];
+const badgeHoja = (h) => `<span class="badge ${TIPOS_HOJA[h.tipo]||'h-obs'}">${esc(h.tipo)}</span>`;
+const badgeEstHoja = (h) => `<span class="badge ${h.estado==='Abierta'?'e-reparacion':'e-listo'}">${esc(h.estado)}</span>`;
+const fechaD = (d) => d ? fecha(d + 'T12:00:00') : '—';
+const hoyKey = () => new Date().toLocaleDateString('en-CA', {timeZone:TZ});
+const diaKey = (iso) => iso ? new Date(iso).toLocaleDateString('en-CA', {timeZone:TZ}) : '';
+function recordarTxt(h){
+  if (!h.recordar || h.estado !== 'Abierta') return '';
+  const d = Math.round((new Date(h.recordar+'T12:00:00') - new Date(hoyKey()+'T12:00:00'))/86400000);
+  const txt = d < 0 ? `Recordar: venció hace ${-d} días` : d === 0 ? 'Recordar: hoy' : `Recordar: ${fechaD(h.recordar)}`;
+  return `<span class="badge ${d <= 0 ? 'h-queja' : 'h-gar'}">${txt}</span>`;
+}
+function tarjetaHoja(h, conVeh=true){
+  const v = vehiculo(h.vehiculoId), c = cliente(v?.clienteId), o = h.ordenId ? orden(h.ordenId) : null;
+  const d = h.descripcion.length > 150 ? h.descripcion.slice(0,150) + '…' : h.descripcion;
+  return `<a class="ot" href="#hoja-${h.id}">
+    <div class="ot-top"><span style="display:flex;gap:6px;flex-wrap:wrap">${badgeHoja(h)}${recordarTxt(h)}</span>${badgeEstHoja(h)}</div>
+    ${conVeh ? `<div class="h-veh" style="display:flex;gap:8px;align-items:center;margin:6px 0 2px">${patenteHTML(v?.patente||'—')}<b>${esc(nombreVeh(v))}</b></div><div class="ot-cli">${esc(c?.nombre||'')}</div>` : ''}
+    <div class="ot-tareas">${esc(d)}</div>
+    <div class="ot-bottom"><span>${fechaD(h.fecha)}${o ? ' · orden ' + nroOrden(o.numero) : ''}${h.fotos?.length ? ' · ' + h.fotos.length + ' foto' + (h.fotos.length>1?'s':'') : ''}</span></div>
+  </a>`;
+}
+/* Aviso naranja cuando el vehículo tiene hojas abiertas */
+function alertaHojasHTML(vid){
+  const hs = hojasAbiertas(vid);
+  if (!hs.length) return '';
+  return `<div class="alerta-hojas" role="note"><b>${ico('alerta')}Este vehículo tiene ${hs.length} ${hs.length===1?'hoja abierta':'hojas abiertas'}</b>
+    <ul>${hs.map(h => `<li><a href="#hoja-${h.id}">${esc(h.tipo)}</a> (${fechaD(h.fecha)}): ${esc(h.descripcion.length > 90 ? h.descripcion.slice(0,90)+'…' : h.descripcion)}</li>`).join('')}</ul></div>`;
+}
+
+function vHoja(r){
+  const h = hoja(r.id);
+  if (!h) return `<div class="vacio"><p>La hoja no existe o fue borrada.</p><a class="btn pri" href="#historial">Ir al historial</a></div>`;
+  const v = vehiculo(h.vehiculoId), c = cliente(v?.clienteId), o = h.ordenId ? orden(h.ordenId) : null;
+  const fotos = (h.fotos||[]).map((f,i) => `<div class="foto"><img src="${f}" alt="Foto ${i+1} de la hoja" data-act="ver-foto-hoja" data-i="${i}" loading="lazy"><button data-act="borrar-foto-hoja" data-i="${i}" aria-label="Borrar foto ${i+1}">${ico('cerrar')}</button></div>`).join('');
+  return `
+  <div class="vhead">
+    <a class="btn icono" href="#vehiculo-${v?.id}" aria-label="Volver al vehículo">${ico('atras')}</a>
+    <h1>${esc(h.tipo)}</h1>
+    <button class="btn icono" data-act="editar-hoja" data-id="${h.id}" aria-label="Editar hoja">${ico('editar')}</button>
+    <button class="btn icono peligro" data-act="borrar-hoja" data-id="${h.id}" aria-label="Borrar hoja">${ico('borrar')}</button>
+  </div>
+  <div class="card">
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">${badgeHoja(h)}${badgeEstHoja(h)}${recordarTxt(h)}</div>
+    <dl class="kv">
+      <dt>Fecha</dt><dd>${fechaD(h.fecha)}</dd>
+      <dt>Vehículo</dt><dd>${patenteHTML(v?.patente||'—')} <a href="#vehiculo-${v?.id}">${esc(nombreVeh(v))}</a></dd>
+      <dt>Cliente</dt><dd>${c ? `<a href="#cliente-${c.id}">${esc(c.nombre)}</a> · ${esc(c.telefono)}` : '—'}</dd>
+      <dt>Orden</dt><dd>${o ? `<a href="#orden-${o.id}">${nroOrden(o.numero)}</a> · ${fecha(o.fechaIngreso)}` : '—'}</dd>
+      <dt>Recordar</dt><dd>${h.recordar ? fechaD(h.recordar) : '—'}</dd>
+    </dl>
+  </div>
+  <div class="card"><h3>Qué pasó</h3><p class="desc-hoja">${esc(h.descripcion)}</p></div>
+  ${h.estado === 'Resuelta' ? `<div class="card" style="border-color:#b7e0c6;background:#f4fbf6"><h3 style="color:var(--ok)">Resuelta el ${fecha(h.resueltaFecha)}</h3><p class="desc-hoja">${h.resolucion ? esc(h.resolucion) : '<span class="muted">Sin detalle de la solución.</span>'}</p></div>` : ''}
+  <div class="card"><h3>Fotos</h3>
+    <div class="fotos">${fotos}<label class="add-foto">${ico('camara')}<span>Agregar</span><input type="file" accept="image/*" capture="environment" multiple data-act="subir-foto-hoja"></label></div>
+  </div>
+  <div class="form-acc" style="margin-top:12px">
+    ${h.estado === 'Abierta' ? `<button class="btn pri" data-act="resolver-hoja" data-id="${h.id}">${ico('check')}Marcar como resuelta</button>` : `<button class="btn" data-act="reabrir-hoja" data-id="${h.id}">${ico('reset')}Volver a abrir</button>`}
+    ${v ? `<a class="btn" href="#nueva-${v.id}">${ico('mas')}Nueva orden para este auto</a>` : ''}
+  </div>`;
+}
+vHoja.despues = (r) => { window.__hojaActual = r.id; };
+
+let HF = null; // fotos del formulario de hoja
+function modalHoja({vid, oid, id}){
+  const h = id ? hoja(id) : null;
+  vid = h ? h.vehiculoId : vid;
+  const v = vehiculo(vid); if (!v) return;
+  HF = {fotos: h ? [...(h.fotos||[])] : []};
+  const ords = ordenesDeVeh(vid);
+  const ordSel = h ? h.ordenId : (oid || '');
+  abrirModal(h ? 'Editar hoja' : 'Nueva hoja', `<form id="form-hoja" novalidate>
+    <p class="chico-txt" style="margin-top:0">${patenteHTML(v.patente)} <b>${esc(nombreVeh(v))}</b></p>
+    <div class="campo"><label for="hf-tipo">Tipo</label><select id="hf-tipo">${Object.keys(TIPOS_HOJA).map(t => `<option ${h?.tipo===t?'selected':''}>${t}</option>`).join('')}</select></div>
+    <div class="campo" id="hf-c-desc"><label for="hf-desc">¿Qué pasó?</label><textarea id="hf-desc" rows="5" placeholder="Ej.: volvió con ruido en la rueda delantera izquierda…">${esc(h?.descripcion||'')}</textarea><span class="err-msg">Contá brevemente qué pasó.</span></div>
+    <div class="fila">
+      <div class="campo"><label for="hf-fecha">Fecha</label><input id="hf-fecha" type="date" value="${esc(h?.fecha || hoyKey())}"></div>
+      <div class="campo"><label for="hf-rec">Fecha para recordar</label><input id="hf-rec" type="date" value="${esc(h?.recordar||'')}"><span class="ayuda">Opcional</span></div>
+    </div>
+    <div class="campo"><label for="hf-orden">Vinculada a la orden</label><select id="hf-orden"><option value="">Ninguna</option>${ords.map(o => `<option value="${o.id}" ${ordSel===o.id?'selected':''}>${nroOrden(o.numero)} · ${fecha(o.fechaIngreso)} · ${esc(o.tareas[0]?.texto||'')}</option>`).join('')}</select></div>
+    ${h ? `<div class="campo"><label for="hf-estado">Estado</label><select id="hf-estado"><option ${h.estado==='Abierta'?'selected':''}>Abierta</option><option ${h.estado==='Resuelta'?'selected':''}>Resuelta</option></select></div>` : ''}
+    <div class="campo"><label>Fotos</label><div class="fotos" id="hf-fotos"></div></div>
+    <div class="form-acc"><button type="button" class="btn" data-act="cerrar-modal">Cancelar</button><button class="btn pri" type="submit">${ico('check')}${h ? 'Guardar' : 'Crear hoja'}</button></div>
+  </form>`);
+  pintarFotosHF();
+  $('#hf-desc').focus();
+  $('#hf-desc').addEventListener('input', () => $('#hf-c-desc').classList.remove('err'));
+  $('#form-hoja').onsubmit = (e) => {
+    e.preventDefault();
+    const desc = $('#hf-desc').value.trim();
+    if (!desc){ $('#hf-c-desc').classList.add('err'); $('#hf-desc').focus(); return; }
+    const datos = {tipo:$('#hf-tipo').value, descripcion:desc, fecha:$('#hf-fecha').value || hoyKey(), recordar:$('#hf-rec').value, ordenId:$('#hf-orden').value, fotos:HF.fotos};
+    let destino;
+    if (h){
+      const est = $('#hf-estado').value;
+      if (est !== h.estado){ datos.estado = est; datos.resueltaFecha = est === 'Resuelta' ? new Date().toISOString() : ''; if (est === 'Abierta') datos.resolucion = ''; }
+      Object.assign(h, datos); destino = h.id;
+    } else {
+      const nueva = Object.assign({id:uid(), vehiculoId:vid, estado:'Abierta', resolucion:'', resueltaFecha:''}, datos);
+      db.hojas.push(nueva); destino = nueva.id;
+    }
+    if (!guardar()) return;
+    cerrarModal(); toast(h ? 'Hoja actualizada' : 'Hoja creada','ok');
+    if (location.hash === '#hoja-' + destino) render(); else ir('#hoja-' + destino);
+  };
+}
+function pintarFotosHF(){
+  $('#hf-fotos').innerHTML = HF.fotos.map((f,i) => `<div class="foto"><img src="${f}" alt="Foto ${i+1}"><button type="button" data-act="quitar-foto-hf" data-i="${i}" aria-label="Quitar foto ${i+1}">${ico('cerrar')}</button></div>`).join('')
+    + `<label class="add-foto">${ico('camara')}<span>Agregar</span><input type="file" accept="image/*" capture="environment" multiple data-act="foto-hf"></label>`;
+}
+
+/* =========================================================
+   VISTA: HISTORIAL (órdenes y hojas con filtros)
+   ========================================================= */
+const H_DEF = {tab:'ordenes', q:'', periodo:'todo', desde:'', hasta:'', por:'ingreso', tipo:'', marca:'', estado:'', tipoHoja:'', soloAbiertas:false};
+let H = {...H_DEF}, hFiltrosAbiertos = true;
+function lunesKey(){ const d = new Date(hoyKey()+'T12:00:00'); d.setDate(d.getDate() - (d.getDay()+6)%7); return d.toISOString().slice(0,10); }
+function enPeriodo(key){
+  if (!key) return false;
+  const hoy = hoyKey();
+  switch(H.periodo){
+    case 'hoy': return key === hoy;
+    case 'semana': return key >= lunesKey() && key <= hoy;
+    case 'mes': return key.slice(0,7) === hoy.slice(0,7);
+    case 'anio': return key.slice(0,4) === hoy.slice(0,4);
+    case 'rango': return (!H.desde || key >= H.desde) && (!H.hasta || key <= H.hasta);
+    default: return true;
+  }
+}
+const fechaRefOrden = (o) => H.por === 'entrega' ? o.fechaEntrega : o.fechaIngreso;
+function coincideVeh(v){
+  if (H.tipo && v?.tipo !== H.tipo) return false;
+  if (H.marca && v?.marca !== H.marca) return false;
+  if (H.soloAbiertas && !hojasAbiertas(v?.id).length) return false;
+  return true;
+}
+function histOrdenes(){
+  const q = sinAcentos(H.q.trim()), qp = normPatente(H.q);
+  return db.ordenes.filter(o => {
+    const v = vehiculo(o.vehiculoId), c = cliente(v?.clienteId), ref = fechaRefOrden(o);
+    if (H.por === 'entrega' && !ref) return false;
+    if (!enPeriodo(diaKey(ref))) return false;
+    if (H.estado && o.estado !== H.estado) return false;
+    if (!coincideVeh(v)) return false;
+    if (q){ const t = sinAcentos([nombreVeh(v), c?.nombre, c?.telefono, o.tareas.map(x=>x.texto).join(' '), nroOrden(o.numero), o.notas].join(' '));
+      if (!t.includes(q) && !(qp && normPatente(v?.patente).includes(qp))) return false; }
+    return true;
+  }).sort((a,b) => (fechaRefOrden(b)||'').localeCompare(fechaRefOrden(a)||''));
+}
+function histHojas(){
+  const q = sinAcentos(H.q.trim()), qp = normPatente(H.q);
+  return db.hojas.filter(h => {
+    const v = vehiculo(h.vehiculoId), c = cliente(v?.clienteId);
+    if (!enPeriodo(h.fecha)) return false;
+    if (H.estado && h.estado !== H.estado) return false;
+    if (H.tipoHoja && h.tipo !== H.tipoHoja) return false;
+    if (H.tipo && v?.tipo !== H.tipo) return false;
+    if (H.marca && v?.marca !== H.marca) return false;
+    if (H.soloAbiertas && h.estado !== 'Abierta') return false;
+    if (q){ const t = sinAcentos([nombreVeh(v), c?.nombre, c?.telefono, h.descripcion, h.tipo, h.resolucion].join(' '));
+      if (!t.includes(q) && !(qp && normPatente(v?.patente).includes(qp))) return false; }
+    return true;
+  }).sort((a,b) => (b.fecha||'').localeCompare(a.fecha||''));
+}
+function filtrosActivos(){ return ['q','tipo','marca','estado','tipoHoja','desde','hasta'].filter(k => H[k]).length + (H.periodo !== 'todo' ? 1 : 0) + (H.soloAbiertas ? 1 : 0) + (H.por !== 'ingreso' && H.tab === 'ordenes' ? 1 : 0); }
+const PERIODOS = [['todo','Todo'],['hoy','Hoy'],['semana','Esta semana'],['mes','Este mes'],['anio','Este año'],['rango','Elegir fechas']];
+function resultadosHistHTML(){
+  if (H.tab === 'ordenes'){
+    const l = histOrdenes(), total = l.reduce((s,o) => s + (Number(o.total)||0), 0);
+    const res = `<div class="resumen-hist"><span><b>${l.length}</b> ${l.length===1?'trabajo':'trabajos'}</span><span>Total <b>${plata(total)}</b></span></div>`;
+    if (!l.length) return res + `<div class="vacio"><p>No hay trabajos con estos filtros.</p><button class="btn" data-act="h-limpiar">Limpiar filtros</button></div>`;
+    return res + `<div class="hist">${l.map(o => { const v = vehiculo(o.vehiculoId), c = cliente(v?.clienteId);
+      return `<a href="#orden-${o.id}"><div class="h-top"><span>${H.por==='entrega'?'Entregado':'Ingresó'} ${fecha(fechaRefOrden(o))} · ${nroOrden(o.numero)}</span>${badge(o.estado)}</div>
+        <div class="h-veh">${patenteHTML(v?.patente||'—')}<b>${esc(nombreVeh(v))}</b><span class="muted chico-txt">${esc(v?.tipo||'')}</span></div>
+        <div class="chico-txt muted" style="margin-top:2px">${esc(c?.nombre||'')}</div>
+        <div class="h-t">${o.tareas.map(t => esc(t.texto)).join(' · ') || '<span class="muted">Sin detalle</span>'}</div>
+        <div class="h-tot">${o.total ? plata(o.total) : ''}</div></a>`; }).join('')}</div>`;
+  }
+  const l = histHojas(), ab = l.filter(h => h.estado === 'Abierta').length;
+  const res = `<div class="resumen-hist"><span><b>${l.length}</b> ${l.length===1?'hoja':'hojas'}</span><span><b>${ab}</b> ${ab===1?'abierta':'abiertas'}</span></div>`;
+  if (!l.length) return res + `<div class="vacio"><p>No hay hojas con estos filtros.</p><button class="btn" data-act="h-limpiar">Limpiar filtros</button></div>`;
+  return res + `<div class="lista cols">${l.map(h => tarjetaHoja(h, true)).join('')}</div>`;
+}
+function vHistorial(){
+  const marcas = [...new Set(db.vehiculos.map(v => v.marca).filter(Boolean))].sort();
+  const n = filtrosActivos();
+  const sel = (id, key, opciones, vacio) => `<select id="${id}" data-h="${key}"><option value="">${vacio}</option>${opciones.map(o => `<option ${H[key]===o?'selected':''}>${esc(o)}</option>`).join('')}</select>`;
+  return `
+  <div class="vhead"><h1 style="min-width:170px">Historial</h1>
+    <button class="btn" data-act="h-copiar">${ico('check')}<span>Copiar Excel</span></button>
+    <button class="btn" data-act="h-imprimir">${ico('imprimir')}<span>PDF</span></button></div>
+  <div class="chips" role="group" aria-label="Qué ver">
+    <button class="chip ${H.tab==='ordenes'?'on':''}" data-act="h-tab" data-t="ordenes" aria-pressed="${H.tab==='ordenes'}">${ico('taller')}Órdenes <span class="n">${db.ordenes.length}</span></button>
+    <button class="chip ${H.tab==='hojas'?'on':''}" data-act="h-tab" data-t="hojas" aria-pressed="${H.tab==='hojas'}">${ico('hoja')}Hojas <span class="n">${db.hojas.length}</span></button>
+  </div>
+  <div class="buscar">${ico('buscar')}<label class="sr-only" for="h-q">Buscar en el historial</label>
+    <input id="h-q" type="search" data-h="q" placeholder="Patente, cliente, teléfono o ${H.tab==='ordenes'?'trabajo':'texto de la hoja'}" value="${esc(H.q)}"></div>
+  <details class="card filtros" id="h-det" ${hFiltrosAbiertos?'open':''}>
+    <summary>${ico('filtro')}Filtros <span class="n" id="h-n">${n ? n + (n===1?' activo':' activos') : ''}</span></summary>
+    <div class="filtros-in">
+      <div class="chips" role="group" aria-label="Período">${PERIODOS.map(([k,t]) => `<button type="button" class="chip ${H.periodo===k?'on':''}" data-act="h-periodo" data-p="${k}" aria-pressed="${H.periodo===k}">${t}</button>`).join('')}</div>
+      <div class="fila" id="h-rango" ${H.periodo==='rango'?'':'hidden'}>
+        <div class="campo"><label for="h-desde">Desde</label><input id="h-desde" type="date" data-h="desde" value="${esc(H.desde)}"></div>
+        <div class="campo"><label for="h-hasta">Hasta</label><input id="h-hasta" type="date" data-h="hasta" value="${esc(H.hasta)}"></div>
+      </div>
+      <div class="fila">
+        ${H.tab==='ordenes' ? `<div class="campo"><label for="h-por">Buscar por fecha de</label><select id="h-por" data-h="por"><option value="ingreso" ${H.por==='ingreso'?'selected':''}>Ingreso</option><option value="entrega" ${H.por==='entrega'?'selected':''}>Entrega</option></select></div>`
+          : `<div class="campo"><label for="h-th">Tipo de hoja</label>${sel('h-th','tipoHoja',Object.keys(TIPOS_HOJA),'Todos los tipos')}</div>`}
+        <div class="campo"><label for="h-est">Estado</label>${sel('h-est','estado', H.tab==='ordenes' ? CONFIG.ESTADOS : ['Abierta','Resuelta'], 'Todos los estados')}</div>
+      </div>
+      <div class="fila">
+        <div class="campo"><label for="h-tipo">Tipo de vehículo</label>${sel('h-tipo','tipo',CONFIG.TIPOS,'Todos')}</div>
+        <div class="campo"><label for="h-marca">Marca</label>${sel('h-marca','marca',marcas,'Todas')}</div>
+      </div>
+      <label class="check-fila"><input type="checkbox" data-h="soloAbiertas" ${H.soloAbiertas?'checked':''}> Solo autos con hojas abiertas</label>
+      <button type="button" class="btn chico" data-act="h-limpiar" style="margin-top:6px">${ico('reset')}Limpiar filtros</button>
+    </div>
+  </details>
+  <div id="hist-res">${resultadosHistHTML()}</div>`;
+}
+vHistorial.despues = () => {
+  const actualizar = () => { $('#hist-res').innerHTML = resultadosHistHTML(); const n = filtrosActivos(); $('#h-n').textContent = n ? n + (n===1?' activo':' activos') : ''; };
+  $$('[data-h]').forEach(el => {
+    const ev = el.tagName === 'SELECT' || el.type === 'checkbox' || el.type === 'date' ? 'change' : 'input';
+    el.addEventListener(ev, () => { H[el.dataset.h] = el.type === 'checkbox' ? el.checked : el.value; actualizar(); });
+  });
+  $('#h-det').addEventListener('toggle', (e) => { hFiltrosAbiertos = e.target.open; });
+};
+/* Filas para exportar lo filtrado */
+function filasHistorial(){
+  if (H.tab === 'ordenes'){
+    const f = [['Orden','Ingreso','Entrega','Estado','Patente','Tipo','Vehículo','Cliente','WhatsApp','Km','Trabajos','Total']];
+    histOrdenes().forEach(o => { const v = vehiculo(o.vehiculoId), c = cliente(v?.clienteId);
+      f.push([nroOrden(o.numero), fecha(o.fechaIngreso), o.fechaEntrega?fecha(o.fechaEntrega):'', o.estado, v?.patente||'', v?.tipo||'', nombreVeh(v), c?.nombre||'', c?.telefono||'', o.km||'', o.tareas.map(t=>t.texto).join(' | '), o.total||0]); });
+    return f;
+  }
+  const f = [['Fecha','Tipo','Estado','Patente','Vehículo','Cliente','Orden','Descripción','Recordar','Resolución']];
+  histHojas().forEach(h => { const v = vehiculo(h.vehiculoId), c = cliente(v?.clienteId), o = h.ordenId ? orden(h.ordenId) : null;
+    f.push([fechaD(h.fecha), h.tipo, h.estado, v?.patente||'', nombreVeh(v), c?.nombre||'', o?nroOrden(o.numero):'', h.descripcion, h.recordar?fechaD(h.recordar):'', h.resolucion||'']); });
+  return f;
+}
+function textoFiltros(){
+  const p = PERIODOS.find(x => x[0] === H.periodo)?.[1];
+  const partes = [H.tab === 'ordenes' ? 'Órdenes' : 'Hojas'];
+  if (H.periodo === 'rango') partes.push(`del ${H.desde?fechaD(H.desde):'inicio'} al ${H.hasta?fechaD(H.hasta):'hoy'}`); else partes.push(p);
+  if (H.tab === 'ordenes') partes.push('por fecha de ' + H.por);
+  ['tipo','marca','estado','tipoHoja'].forEach(k => H[k] && partes.push(H[k]));
+  if (H.soloAbiertas) partes.push('con hojas abiertas');
+  if (H.q) partes.push(`«${H.q}»`);
+  return partes.join(' · ');
+}
+function imprimirHistorial(){
+  const f = filasHistorial(), cab = f.shift();
+  const resumen = H.tab === 'ordenes' ? `${f.length} trabajos · Total ${plata(histOrdenes().reduce((s,o)=>s+(Number(o.total)||0),0))}` : `${f.length} hojas`;
+  const cols = H.tab === 'ordenes' ? [0,1,3,4,6,7,10,11] : [0,1,2,3,4,7];
+  const html = `<div class="pr-h"><div><h1>${esc(db.config.taller)}</h1><div>Historial — ${esc(textoFiltros())}</div></div><div style="text-align:right">Impreso: ${fecha(new Date().toISOString())}<div><b>${esc(resumen)}</b></div></div></div>
+    <table class="pr-t"><tr>${cols.map(i => `<th>${esc(cab[i])}</th>`).join('')}</tr>
+    ${f.map(r => `<tr>${cols.map(i => `<td>${esc(i===11 ? plata(r[i]) : r[i])}</td>`).join('')}</tr>`).join('')}</table>
+    <div class="pr-pie">Sistema: Propiedad de Cordobes Fausto</div>`;
+  $('#print-area').innerHTML = html;
+  abrirModal('Historial para imprimir', `<div class="comp" style="overflow-x:auto">${html}</div>
+    <p class="muted chico-txt">En la ventana de impresión elegí «Guardar como PDF».</p>
+    <div class="form-acc"><button class="btn" data-act="cerrar-modal">Cerrar</button><button class="btn pri" id="btn-print">${ico('imprimir')}Imprimir / guardar PDF</button></div>`);
+  $('#btn-print').onclick = () => { try { window.print(); } catch(e){ toast('Este navegador no permite imprimir desde acá','error'); } };
+}
+function copiarTSV(filas){
+  const tsv = filas.map(f => f.map(x => String(x).replace(/[\t\n]/g,' ')).join('\t')).join('\n');
+  if (!navigator.clipboard){ toast('No se pudo copiar en este navegador','error'); return; }
+  navigator.clipboard.writeText(tsv).then(() => toast(`Copiadas ${filas.length-1} filas: pegalas en Excel`,'ok'), () => toast('No se pudo copiar en este navegador','error'));
+}
+
+/* =========================================================
    VISTA: AJUSTES
    ========================================================= */
 function vAjustes(){
@@ -1341,7 +1663,7 @@ document.addEventListener('click', (e) => {
     case 'wa': if (o) abrirWA(o); break;
     case 'tarea': if (o){ const t = o.tareas.find(x => x.id === el.dataset.t); if (t){ t.hecha = el.checked; guardar(); el.closest('li').classList.toggle('hecha', t.hecha); } } break;
     case 'imprimir': if (o) imprimir(o); break;
-    case 'borrar-orden': if (o) confirmar('Borrar orden', `Se va a borrar la orden ${nroOrden(o.numero)} con sus fotos. Esto no se puede deshacer.`, 'Borrar', () => { db.ordenes = db.ordenes.filter(x => x.id !== o.id); guardar(); toast('Orden borrada'); ir('#taller'); }); break;
+    case 'borrar-orden': if (o) confirmar('Borrar orden', `Se va a borrar la orden ${nroOrden(o.numero)} con sus fotos. Esto no se puede deshacer.`, 'Borrar', () => { db.ordenes = db.ordenes.filter(x => x.id !== o.id); db.hojas.forEach(h => { if (h.ordenId === o.id) h.ordenId = ''; }); guardar(); toast('Orden borrada'); ir('#taller'); }); break;
     case 'ver-foto': if (o) abrirModal('Foto', `<img class="modal-img" src="${o.fotos[+el.dataset.i]}" alt="Foto de la orden">`); break;
     case 'borrar-foto': if (o) confirmar('Borrar foto', '¿Borrar esta foto de la orden?', 'Borrar', () => { o.fotos.splice(+el.dataset.i,1); guardar(); render(); }); break;
     case 'add-tarea': agregarTarea(); break;
@@ -1352,12 +1674,30 @@ document.addEventListener('click', (e) => {
     case 'editar-vehiculo': modalVehiculo(el.dataset.id); break;
     case 'borrar-vehiculo': { const v = vehiculo(el.dataset.id), n = ordenesDeVeh(v.id).length;
         if (n) abrirModal('No se puede borrar', `<p>Este vehículo tiene ${n} ${n===1?'orden':'órdenes'} en su historial. Borrá primero las órdenes si de verdad querés eliminarlo.</p><div class="form-acc"><button class="btn pri" data-act="cerrar-modal">Entendido</button></div>`);
-        else confirmar('Borrar vehículo', `¿Borrar ${esc(nombreVeh(v))} (${esc(v.patente)})?`, 'Borrar', () => { db.vehiculos = db.vehiculos.filter(x => x.id !== v.id); guardar(); ir('#vehiculos'); toast('Vehículo borrado'); }); } break;
+        else confirmar('Borrar vehículo', `¿Borrar ${esc(nombreVeh(v))} (${esc(v.patente)})?`, 'Borrar', () => { db.vehiculos = db.vehiculos.filter(x => x.id !== v.id); db.hojas = db.hojas.filter(h => h.vehiculoId !== v.id); guardar(); ir('#vehiculos'); toast('Vehículo borrado'); }); } break;
     case 'nuevo-cliente': modalCliente(null); break;
     case 'editar-cliente': cerrarModal(); modalCliente(el.dataset.id); break;
     case 'borrar-cliente': { const c = cliente(el.dataset.id), n = vehiculosDeCli(c.id).length;
         if (n) abrirModal('No se puede borrar', `<p>${esc(c.nombre)} tiene ${n} ${n===1?'vehículo':'vehículos'} a su nombre. Pasalos a otro dueño o borralos primero.</p><div class="form-acc"><button class="btn pri" data-act="cerrar-modal">Entendido</button></div>`);
         else confirmar('Borrar cliente', `¿Borrar a ${esc(c.nombre)}?`, 'Borrar', () => { db.clientes = db.clientes.filter(x => x.id !== c.id); guardar(); ir('#clientes'); toast('Cliente borrado'); }); } break;
+    case 'nueva-hoja': modalHoja({vid:el.dataset.vid, oid:el.dataset.oid || ''}); break;
+    case 'editar-hoja': modalHoja({id:el.dataset.id}); break;
+    case 'borrar-hoja': { const h = hoja(el.dataset.id); if (h) confirmar('Borrar hoja', `¿Borrar esta hoja (${esc(h.tipo)})? No se puede deshacer.`, 'Borrar', () => { const vid = h.vehiculoId; db.hojas = db.hojas.filter(x => x.id !== h.id); guardar(); toast('Hoja borrada'); ir('#vehiculo-' + vid); }); } break;
+    case 'resolver-hoja': { const h = hoja(el.dataset.id); if (!h) break;
+        abrirModal('Marcar como resuelta', `<div class="campo"><label for="hr-txt">¿Cómo se resolvió? (opcional)</label><textarea id="hr-txt" rows="4" placeholder="Ej.: se cambió el buje, quedó sin ruido"></textarea></div>
+          <div class="form-acc"><button class="btn" data-act="cerrar-modal">Cancelar</button><button class="btn pri" id="hr-ok">${ico('check')}Marcar resuelta</button></div>`);
+        $('#hr-ok').onclick = () => { Object.assign(h, {estado:'Resuelta', resueltaFecha:new Date().toISOString(), resolucion:$('#hr-txt').value.trim()}); guardar(); cerrarModal(); render(); toast('Hoja resuelta','ok'); };
+      } break;
+    case 'reabrir-hoja': { const h = hoja(el.dataset.id); if (h){ Object.assign(h, {estado:'Abierta', resueltaFecha:'', resolucion:''}); guardar(); render(); toast('Hoja abierta de nuevo'); } } break;
+    case 'ver-foto-hoja': { const h = hoja(window.__hojaActual); if (h) abrirModal('Foto', `<img class="modal-img" src="${h.fotos[+el.dataset.i]}" alt="Foto de la hoja">`); } break;
+    case 'borrar-foto-hoja': { const h = hoja(window.__hojaActual); if (h) confirmar('Borrar foto', '¿Borrar esta foto de la hoja?', 'Borrar', () => { h.fotos.splice(+el.dataset.i,1); guardar(); render(); }); } break;
+    case 'quitar-foto-hf': HF.fotos.splice(+el.dataset.i,1); pintarFotosHF(); break;
+    case 'h-tab': H.tab = el.dataset.t; H.estado = ''; render(); break;
+    case 'h-periodo': H.periodo = el.dataset.p; $$('[data-act=h-periodo]').forEach(b => { const on = b.dataset.p === H.periodo; b.classList.toggle('on', on); b.setAttribute('aria-pressed', on); });
+      $('#h-rango').hidden = H.periodo !== 'rango'; $('#hist-res').innerHTML = resultadosHistHTML(); { const n = filtrosActivos(); $('#h-n').textContent = n ? n + (n===1?' activo':' activos') : ''; } break;
+    case 'h-limpiar': H = {...H_DEF, tab:H.tab}; render(); break;
+    case 'h-copiar': copiarTSV(filasHistorial()); break;
+    case 'h-imprimir': imprimirHistorial(); break;
     case 'msg': abrirMensaje({cid:el.dataset.cli, oid:el.dataset.ord || null, tipo:el.dataset.tipo}); break;
     case 'plantilla2-def': $('#cfg-pl2').value = PLANTILLA_DEMORA; break;
     case 'borrar-msg': { const m = db.mensajes.find(x => x.id === el.dataset.id);
@@ -1383,7 +1723,7 @@ document.addEventListener('click', (e) => {
       if (!navigator.clipboard) { toast('No se pudo copiar en este navegador','error'); break; }
       navigator.clipboard.writeText(tsv).then(() => toast('Copiado: pegalo en una planilla de Excel','ok'), () => toast('No se pudo copiar en este navegador','error'));
     } break;
-    case 'reset': confirmar('Restablecer datos de ejemplo', 'Se borra todo lo que cargaste y vuelven los datos de muestra. ¿Seguro?', 'Restablecer', () => { db = datosEjemplo(); guardar(); filtroEstado='activos'; busqTaller=busqVeh=busqCli=''; ir('#taller'); render(); toast('Datos de ejemplo restablecidos','ok'); }); break;
+    case 'reset': confirmar('Restablecer datos de ejemplo', 'Se borra todo lo que cargaste y vuelven los datos de muestra. ¿Seguro?', 'Restablecer', () => { db = datosEjemplo(); guardar(); filtroEstado='activos'; busqTaller=busqVeh=busqCli=''; H = {...H_DEF}; ir('#taller'); render(); toast('Datos de ejemplo restablecidos','ok'); }); break;
     case 'salir': abrirSesion(false); $('#root').innerHTML=''; render(); break;
   }
 });
@@ -1393,6 +1733,14 @@ document.addEventListener('change', async (e) => {
     const o = orden(window.__ordenActual); if (!o) return;
     const nuevas = await leerFotos(el.files); o.fotos.push(...nuevas);
     if (guardar()) { render(); toast(nuevas.length === 1 ? 'Foto agregada' : nuevas.length + ' fotos agregadas','ok'); } else { o.fotos.splice(-nuevas.length); }
+  }
+  if (el.dataset?.act === 'subir-foto-hoja' && el.files?.length){
+    const h = hoja(window.__hojaActual); if (!h) return;
+    const nuevas = await leerFotos(el.files); h.fotos = h.fotos || []; h.fotos.push(...nuevas);
+    if (guardar()) { render(); toast(nuevas.length === 1 ? 'Foto agregada' : nuevas.length + ' fotos agregadas','ok'); } else { h.fotos.splice(-nuevas.length); }
+  }
+  if (el.dataset?.act === 'foto-hf' && el.files?.length){
+    HF.fotos.push(...await leerFotos(el.files)); pintarFotosHF();
   }
   if (el.dataset?.act === 'foto-form' && el.files?.length){
     F.fotos.push(...await leerFotos(el.files)); pintarFotosForm();
